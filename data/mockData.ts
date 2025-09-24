@@ -35,29 +35,34 @@ export const MOCK_KPI_TREND_DATA = [
     { date: 'Jul', Reach: 3490, 'Engagement Rate': 4.3, Sentiment: 0.9 },
 ];
 
+// FIX: Corrected property 'campaign' to 'campaigns' and added missing 'campaign_id' to align with the 'Input' type. Also updated 'created_by' to an ID and added a 'profiles' object to match UI expectations.
 export const MOCK_INPUTS: Input[] = [
-    { id: 'in-1', type: InputType.LINK, title: 'SacBee Article on Dam Project', link_url: '#', campaign: 'Folsom Dam Raise', created_by: 'Jane Doe', created_at: '2024-07-22T14:00:00Z' },
-    { id: 'in-2', type: InputType.PRODUCT, title: 'Water Safety Video Final Cut', link_url: '#', campaign: 'Water Safety Awareness 2024', created_by: 'John Public', created_at: '2024-07-21T10:30:00Z' },
-    { id: 'in-3', type: InputType.NOTE, title: 'Meeting notes with Stakeholders', link_url: '#', campaign: 'Folsom Dam Raise', created_by: 'Jane Doe', created_at: '2024-07-20T16:45:00Z' },
+    { id: 'in-1', type: InputType.LINK, title: 'SacBee Article on Dam Project', link_url: '#', campaign_id: 'camp-1', created_by: 'user-2', created_at: '2024-07-22T14:00:00Z', campaigns: { name: 'Folsom Dam Raise' }, profiles: { full_name: 'Jane Doe' } },
+    { id: 'in-2', type: InputType.PRODUCT, title: 'Water Safety Video Final Cut', link_url: '#', campaign_id: 'camp-2', created_by: 'user-1', created_at: '2024-07-21T10:30:00Z', campaigns: { name: 'Water Safety Awareness 2024' }, profiles: { full_name: 'John Public' } },
+    { id: 'in-3', type: InputType.NOTE, title: 'Meeting notes with Stakeholders', link_url: '#', campaign_id: 'camp-1', created_by: 'user-2', created_at: '2024-07-20T16:45:00Z', campaigns: { name: 'Folsom Dam Raise' }, profiles: { full_name: 'Jane Doe' } },
 ];
 
+// FIX: Corrected property 'assignee' to 'assignee_id' and 'campaign' to 'campaigns' (plus 'campaign_id') to align with the 'Task' type. Also added a 'profiles' object to match UI expectations.
 export const MOCK_TASKS: Task[] = [
-    { id: 'task-1', title: 'Draft press release for project milestone', assignee: 'Jane Doe', due_date: '2024-07-30', status: TaskStatus.IN_PROGRESS, priority: TaskPriority.HIGH, campaign: 'Folsom Dam Raise' },
-    { id: 'task-2', title: 'Schedule social media posts for August', assignee: 'John Public', due_date: '2024-07-28', status: TaskStatus.TODO, priority: TaskPriority.MED, campaign: 'Water Safety Awareness 2024' },
-    { id: 'task-3', title: 'Finalize presentation for community meeting', assignee: 'Jane Doe', status: TaskStatus.DONE, campaign: 'Folsom Dam Raise' },
+    { id: 'task-1', title: 'Draft press release for project milestone', assignee_id: 'user-2', due_date: '2024-07-30', status: TaskStatus.IN_PROGRESS, priority: TaskPriority.HIGH, campaign_id: 'camp-1', campaigns: { name: 'Folsom Dam Raise' }, profiles: { full_name: 'Jane Doe' } },
+    { id: 'task-2', title: 'Schedule social media posts for August', assignee_id: 'user-1', due_date: '2024-07-28', status: TaskStatus.TODO, priority: TaskPriority.MED, campaign_id: 'camp-2', campaigns: { name: 'Water Safety Awareness 2024' }, profiles: { full_name: 'John Public' } },
+    { id: 'task-3', title: 'Finalize presentation for community meeting', assignee_id: 'user-2', status: TaskStatus.DONE, campaign_id: 'camp-1', campaigns: { name: 'Folsom Dam Raise' }, profiles: { full_name: 'Jane Doe' } },
 ];
 
+// FIX: Corrected property 'campaign' to 'campaigns' and added missing 'campaign_id' to align with the 'Engagement' type.
 export const MOCK_ENGAGEMENTS: Engagement[] = [
-    { id: 'eng-1', date: '2024-07-15', type: EngagementType.COMMUNITY_MEETING, audience: 'Folsom Residents', location: 'Folsom City Hall', campaign: 'Folsom Dam Raise', outcomes: 'Positive reception, good questions.' },
-    { id: 'eng-2', date: '2024-07-10', type: EngagementType.MEDIA_INTERVIEW, audience: 'KCRA Channel 3', location: 'On-site at Dam', campaign: 'Folsom Dam Raise', outcomes: 'Aired on evening news.' },
+    { id: 'eng-1', date: '2024-07-15', type: EngagementType.COMMUNITY_MEETING, audience: 'Folsom Residents', location: 'Folsom City Hall', campaign_id: 'camp-1', campaigns: { name: 'Folsom Dam Raise' }, outcomes: 'Positive reception, good questions.' },
+    { id: 'eng-2', date: '2024-07-10', type: EngagementType.MEDIA_INTERVIEW, audience: 'KCRA Channel 3', location: 'On-site at Dam', campaign_id: 'camp-1', campaigns: { name: 'Folsom Dam Raise' }, outcomes: 'Aired on evening news.' },
 ];
 
+// FIX: Corrected property 'campaign' to 'campaigns' and added missing 'campaign_id' to align with the 'MediaLog' type.
 export const MOCK_MEDIA_LOGS: MediaLog[] = [
-    { id: 'ml-1', date: '2024-07-11', outlet: 'KCRA Channel 3', headline: 'USACE Showcases Progress on Folsom Dam', sentiment: Sentiment.POSITIVE, reach: 150000, campaign: 'Folsom Dam Raise' },
-    { id: 'ml-2', date: '2024-07-05', outlet: 'Sacramento Bee', headline: 'Is the Folsom Dam Project on Schedule?', sentiment: Sentiment.NEUTRAL, reach: 80000, campaign: 'Folsom Dam Raise' },
+    { id: 'ml-1', date: '2024-07-11', outlet: 'KCRA Channel 3', headline: 'USACE Showcases Progress on Folsom Dam', sentiment: Sentiment.POSITIVE, reach: 150000, campaign_id: 'camp-1', campaigns: { name: 'Folsom Dam Raise' } },
+    { id: 'ml-2', date: '2024-07-05', outlet: 'Sacramento Bee', headline: 'Is the Folsom Dam Project on Schedule?', sentiment: Sentiment.NEUTRAL, reach: 80000, campaign_id: 'camp-1', campaigns: { name: 'Folsom Dam Raise' } },
 ];
 
+// FIX: Corrected 'assigned_to' to be an ID and added a 'profiles' object to align with the 'MediaQuery' type and UI expectations.
 export const MOCK_MEDIA_QUERIES: MediaQuery[] = [
-    { id: 'mq-1', date: '2024-07-22', outlet: 'Associated Press', topic: 'Project budget and timeline', deadline: '2024-07-23T17:00:00Z', status: MediaQueryStatus.ASSIGNED, assigned_to: 'John Public' },
-    { id: 'mq-2', date: '2024-07-19', outlet: 'Local Blogger', topic: 'Recreational impacts', deadline: '2024-07-20T12:00:00Z', status: MediaQueryStatus.ANSWERED, assigned_to: 'Jane Doe' },
+    { id: 'mq-1', date: '2024-07-22', outlet: 'Associated Press', topic: 'Project budget and timeline', deadline: '2024-07-23T17:00:00Z', status: MediaQueryStatus.ASSIGNED, assigned_to: 'user-1', profiles: { full_name: 'John Public' } },
+    { id: 'mq-2', date: '2024-07-19', outlet: 'Local Blogger', topic: 'Recreational impacts', deadline: '2024-07-20T12:00:00Z', status: MediaQueryStatus.ANSWERED, assigned_to: 'user-2', profiles: { full_name: 'Jane Doe' } },
 ];

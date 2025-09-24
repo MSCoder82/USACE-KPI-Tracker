@@ -53,9 +53,11 @@ export interface Input {
     type: InputType;
     title: string;
     link_url?: string;
-    campaign: string;
+    campaign_id: string;
     created_by: string;
     created_at: string;
+    campaigns?: { name: string };
+    profiles?: { full_name: string };
 }
 
 export enum TaskStatus {
@@ -75,11 +77,13 @@ export enum TaskPriority {
 export interface Task {
     id: string;
     title: string;
-    assignee: string;
+    assignee_id: string;
     due_date?: string;
     status: TaskStatus;
     priority?: TaskPriority;
-    campaign: string;
+    campaign_id: string;
+    campaigns?: { name: string };
+    profiles?: { full_name: string };
 }
 
 export enum EngagementType {
@@ -95,8 +99,9 @@ export interface Engagement {
     type: EngagementType;
     audience?: string;
     location?: string;
-    campaign: string;
+    campaign_id: string;
     outcomes?: string;
+    campaigns?: { name: string };
 }
 
 export enum Sentiment {
@@ -112,7 +117,8 @@ export interface MediaLog {
     headline?: string;
     sentiment?: Sentiment;
     reach?: number;
-    campaign: string;
+    campaign_id: string;
+    campaigns?: { name: string };
 }
 
 export enum MediaQueryStatus {
@@ -130,6 +136,7 @@ export interface MediaQuery {
     deadline?: string;
     status: MediaQueryStatus;
     assigned_to?: string;
+    profiles?: { full_name: string };
 }
 
 export interface ComplanSection {

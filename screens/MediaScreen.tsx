@@ -1,9 +1,9 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Card from '../components/Card';
 import Button from '../components/Button';
-import { MOCK_MEDIA_LOGS, MOCK_MEDIA_QUERIES } from '../data/mockData';
-import { PlusCircle } from 'lucide-react';
+import { useUser } from '../App';
+import { supabase } from '../lib/supabaseClient';
+import { PlusCircle, Loader } from 'lucide-react';
 import type { MediaLog, MediaQuery } from '../types';
 import { Sentiment, MediaQueryStatus } from '../types';
 
@@ -21,7 +21,7 @@ const MediaLogRow: React.FC<{ log: MediaLog }> = ({ log }) => {
             <td className="p-4 text-gray-300">{log.headline}</td>
             <td className={`p-4 capitalize font-semibold ${sentimentClasses[log.sentiment!] || ''}`}>{log.sentiment}</td>
             <td className="p-4 text-gray-300">{log.reach?.toLocaleString() || 'N/A'}</td>
-            <td className="p-4 text-gray-300">{log.campaign}</td>
+            <td className="p-4 text-gray-300">{log.campaigns?.name || 'N/A'}</td>
         </tr>
     );
 };
@@ -45,13 +45,55 @@ const MediaQueryRow: React.FC<{ query: MediaQuery }> = ({ query }) => {
                     {query.status}
                 </span>
             </td>
-            <td className="p-4 text-gray-300">{query.assigned_to || 'N/A'}</td>
+            <td className="p-4 text-gray-300">{query.profiles?.full_name || 'N/A'}</td>
         </tr>
     );
 };
 
 
 const MediaScreen: React.FC = () => {
+    const { user } = useUser();
+    const [mediaLogs, setMediaLogs] = useState<MediaLog[]>([]);
+    const [mediaQueries, setMediaQueries] = useState<MediaQuery[]>([]);
+    const [logsLoading, setLogsLoading] = useState(true);
+    const [queriesLoading, setQueriesLoading] = useState(true);
+    const [logsError, setLogsError] = useState<string | null>(null);
+    const [queriesError, setQueriesError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!user?.team_id) return;
+
+        const fetchMediaLogs = async () => {
+            setLogsLoading(true);
+            const { data, error } = await supabase
+                .from('media_logs')
+                .select('*, campaigns(name)')
+                .eq('team_id', user.team_id)
+                .order('date', { ascending: false });
+            
+            if (error) setLogsError(error.message);
+            else setMediaLogs(data as MediaLog[] || []);
+            setLogsLoading(false);
+        };
+        
+        const fetchMediaQueries = async () => {
+            setQueriesLoading(true);
+            const { data, error } = await supabase
+                .from('media_queries')
+                .select('*, profiles!assigned_to(full_name)')
+                .eq('team_id', user.team_id)
+                .order('date', { ascending: false });
+
+            if (error) setQueriesError(error.message);
+            else setMediaQueries(data as MediaQuery[] || []);
+            setQueriesLoading(false);
+        };
+
+        fetchMediaLogs();
+        fetchMediaQueries();
+    }, [user]);
+
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
@@ -63,43 +105,59 @@ const MediaScreen: React.FC = () => {
             </div>
 
             <Card title="Media Coverage">
-                 <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left">
-                        <thead className="text-xs text-gray-400 uppercase bg-usace-card">
-                            <tr>
-                                <th className="p-4">Date</th>
-                                <th className="p-4">Outlet</th>
-                                <th className="p-4">Headline</th>
-                                <th className="p-4">Sentiment</th>
-                                <th className="p-4">Reach</th>
-                                <th className="p-4">Campaign</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {MOCK_MEDIA_LOGS.map(log => <MediaLogRow key={log.id} log={log} />)}
-                        </tbody>
-                    </table>
-                </div>
+                 {logsLoading ? (
+                    <div className="flex justify-center items-center p-8"><Loader className="h-6 w-6 animate-spin text-usace-red" /></div>
+                 ) : logsError ? (
+                    <div className="p-4 text-center text-red-400">{`Error: ${logsError}`}</div>
+                 ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm text-left">
+                            <thead className="text-xs text-gray-400 uppercase bg-usace-card">
+                                <tr>
+                                    <th className="p-4">Date</th>
+                                    <th className="p-4">Outlet</th>
+                                    <th className="p-4">Headline</th>
+                                    <th className="p-4">Sentiment</th>
+                                    <th className="p-4">Reach</th>
+                                    <th className="p-4">Campaign</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {mediaLogs.length > 0 ? mediaLogs.map(log => <MediaLogRow key={log.id} log={log} />) : (
+                                    <tr><td colSpan={6} className="p-4 text-center text-gray-400">No media logs found.</td></tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                 )}
             </Card>
 
             <Card title="Media Queries">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left">
-                        <thead className="text-xs text-gray-400 uppercase bg-usace-card">
-                            <tr>
-                                <th className="p-4">Date</th>
-                                <th className="p-4">Outlet</th>
-                                <th className="p-4">Topic</th>
-                                <th className="p-4">Deadline</th>
-                                <th className="p-4">Status</th>
-                                <th className="p-4">Assigned To</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {MOCK_MEDIA_QUERIES.map(query => <MediaQueryRow key={query.id} query={query} />)}
-                        </tbody>
-                    </table>
-                </div>
+                {queriesLoading ? (
+                    <div className="flex justify-center items-center p-8"><Loader className="h-6 w-6 animate-spin text-usace-red" /></div>
+                 ) : queriesError ? (
+                    <div className="p-4 text-center text-red-400">{`Error: ${queriesError}`}</div>
+                 ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm text-left">
+                            <thead className="text-xs text-gray-400 uppercase bg-usace-card">
+                                <tr>
+                                    <th className="p-4">Date</th>
+                                    <th className="p-4">Outlet</th>
+                                    <th className="p-4">Topic</th>
+                                    <th className="p-4">Deadline</th>
+                                    <th className="p-4">Status</th>
+                                    <th className="p-4">Assigned To</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {mediaQueries.length > 0 ? mediaQueries.map(query => <MediaQueryRow key={query.id} query={query} />) : (
+                                     <tr><td colSpan={6} className="p-4 text-center text-gray-400">No media queries found.</td></tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </Card>
         </div>
     );

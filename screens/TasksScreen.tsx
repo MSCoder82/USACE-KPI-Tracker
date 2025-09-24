@@ -1,11 +1,10 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Card from '../components/Card';
 import Button from '../components/Button';
-import { MOCK_TASKS } from '../data/mockData';
 import { useUser } from '../App';
+import { supabase } from '../lib/supabaseClient';
 import { UserRole } from '../types';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Loader } from 'lucide-react';
 import type { Task } from '../types';
 import { TaskStatus, TaskPriority } from '../types';
 
@@ -27,7 +26,7 @@ const TaskRow: React.FC<{ task: Task }> = ({ task }) => {
     return (
         <tr className="border-b border-usace-border hover:bg-usace-border/50">
             <td className="p-4 font-medium text-white">{task.title}</td>
-            <td className="p-4 text-gray-300">{task.assignee}</td>
+            <td className="p-4 text-gray-300">{task.profiles?.full_name || 'N/A'}</td>
             <td className="p-4 text-gray-300">{task.due_date || 'N/A'}</td>
             <td className="p-4 text-gray-300">
                 <span className={`px-2 py-1 text-xs font-semibold rounded-full ${statusClasses[task.status]}`}>
@@ -35,15 +34,40 @@ const TaskRow: React.FC<{ task: Task }> = ({ task }) => {
                 </span>
             </td>
             <td className={`p-4 font-semibold capitalize ${priorityClasses[task.priority!] || ''}`}>{task.priority || 'N/A'}</td>
-            <td className="p-4 text-gray-300">{task.campaign}</td>
+            <td className="p-4 text-gray-300">{task.campaigns?.name || 'N/A'}</td>
         </tr>
     );
 };
 
 
 const TasksScreen: React.FC = () => {
-    const { hasPermission } = useUser();
+    const { user, hasPermission } = useUser();
     const canCreate = hasPermission([UserRole.CHIEF, UserRole.ADMIN]);
+    const [tasks, setTasks] = useState<Task[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchTasks = async () => {
+            if (!user?.team_id) return;
+
+            setLoading(true);
+            const { data, error } = await supabase
+                .from('tasks')
+                .select('*, campaigns(name), profiles!assignee_id(full_name)')
+                .eq('team_id', user.team_id)
+                .order('due_date', { ascending: true, nullsFirst: false });
+
+            if (error) {
+                console.error("Error fetching tasks:", error);
+                setError(error.message);
+            } else {
+                setTasks(data as Task[] || []);
+            }
+            setLoading(false);
+        };
+        fetchTasks();
+    }, [user]);
 
     return (
         <div className="space-y-6">
@@ -54,25 +78,39 @@ const TasksScreen: React.FC = () => {
                 )}
             </div>
             <Card>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left">
-                        <thead className="text-xs text-gray-400 uppercase bg-usace-card">
-                            <tr>
-                                <th className="p-4">Title</th>
-                                <th className="p-4">Assignee</th>
-                                <th className="p-4">Due Date</th>
-                                <th className="p-4">Status</th>
-                                <th className="p-4">Priority</th>
-                                <th className="p-4">Campaign</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {MOCK_TASKS.map(task => (
-                                <TaskRow key={task.id} task={task} />
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                {loading ? (
+                    <div className="flex justify-center items-center p-8">
+                        <Loader className="h-6 w-6 animate-spin text-usace-red" />
+                    </div>
+                ) : error ? (
+                    <div className="p-4 text-center text-red-400">{`Error: ${error}`}</div>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm text-left">
+                            <thead className="text-xs text-gray-400 uppercase bg-usace-card">
+                                <tr>
+                                    <th className="p-4">Title</th>
+                                    <th className="p-4">Assignee</th>
+                                    <th className="p-4">Due Date</th>
+                                    <th className="p-4">Status</th>
+                                    <th className="p-4">Priority</th>
+                                    <th className="p-4">Campaign</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {tasks.length > 0 ? (
+                                    tasks.map(task => (
+                                        <TaskRow key={task.id} task={task} />
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan={6} className="p-4 text-center text-gray-400">No tasks found.</td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </Card>
         </div>
     );

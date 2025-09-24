@@ -1,9 +1,9 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Card from '../components/Card';
 import Button from '../components/Button';
-import { MOCK_ENGAGEMENTS } from '../data/mockData';
-import { PlusCircle } from 'lucide-react';
+import { useUser } from '../App';
+import { supabase } from '../lib/supabaseClient';
+import { PlusCircle, Loader } from 'lucide-react';
 import type { Engagement } from '../types';
 
 const EngagementRow: React.FC<{ engagement: Engagement }> = ({ engagement }) => {
@@ -13,14 +13,40 @@ const EngagementRow: React.FC<{ engagement: Engagement }> = ({ engagement }) => 
             <td className="p-4 text-gray-300 capitalize">{engagement.type.replace(/_/g, ' ')}</td>
             <td className="p-4 text-gray-300">{engagement.audience || 'N/A'}</td>
             <td className="p-4 text-gray-300">{engagement.location || 'N/A'}</td>
-            <td className="p-4 text-gray-300">{engagement.campaign}</td>
+            <td className="p-4 text-gray-300">{engagement.campaigns?.name || 'N/A'}</td>
             <td className="p-4 text-gray-300">{engagement.outcomes || 'N/A'}</td>
         </tr>
     );
 };
 
-
 const EngagementsScreen: React.FC = () => {
+    const { user } = useUser();
+    const [engagements, setEngagements] = useState<Engagement[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchEngagements = async () => {
+            if (!user?.team_id) return;
+
+            setLoading(true);
+            const { data, error } = await supabase
+                .from('engagements')
+                .select('*, campaigns(name)')
+                .eq('team_id', user.team_id)
+                .order('date', { ascending: false });
+
+            if (error) {
+                console.error("Error fetching engagements:", error);
+                setError(error.message);
+            } else {
+                setEngagements(data as Engagement[] || []);
+            }
+            setLoading(false);
+        };
+        fetchEngagements();
+    }, [user]);
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
@@ -28,25 +54,39 @@ const EngagementsScreen: React.FC = () => {
                 <Button Icon={PlusCircle}>Log Engagement</Button>
             </div>
             <Card>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left">
-                        <thead className="text-xs text-gray-400 uppercase bg-usace-card">
-                            <tr>
-                                <th className="p-4">Date</th>
-                                <th className="p-4">Type</th>
-                                <th className="p-4">Audience</th>
-                                <th className="p-4">Location</th>
-                                <th className="p-4">Campaign</th>
-                                <th className="p-4">Outcomes</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {MOCK_ENGAGEMENTS.map(engagement => (
-                                <EngagementRow key={engagement.id} engagement={engagement} />
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                {loading ? (
+                    <div className="flex justify-center items-center p-8">
+                        <Loader className="h-6 w-6 animate-spin text-usace-red" />
+                    </div>
+                ) : error ? (
+                    <div className="p-4 text-center text-red-400">{`Error: ${error}`}</div>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm text-left">
+                            <thead className="text-xs text-gray-400 uppercase bg-usace-card">
+                                <tr>
+                                    <th className="p-4">Date</th>
+                                    <th className="p-4">Type</th>
+                                    <th className="p-4">Audience</th>
+                                    <th className="p-4">Location</th>
+                                    <th className="p-4">Campaign</th>
+                                    <th className="p-4">Outcomes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {engagements.length > 0 ? (
+                                    engagements.map(engagement => (
+                                        <EngagementRow key={engagement.id} engagement={engagement} />
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan={6} className="p-4 text-center text-gray-400">No engagements found.</td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </Card>
         </div>
     );
