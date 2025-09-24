@@ -1,15 +1,12 @@
-
 import type { User, Campaign, Goal, Input, Task, Engagement, MediaLog, MediaQuery } from '../types';
 import { UserRole, CampaignStatus, InputType, TaskStatus, TaskPriority, EngagementType, Sentiment, MediaQueryStatus } from '../types';
 
 export const MOCK_USER: User = {
     id: 'user-1',
     email: 'john.q.public@usace.army.mil',
-    name: 'John Q. Public',
+    full_name: 'John Q. Public',
     role: UserRole.CHIEF,
     team_id: 'team-1',
-    rank: 'GS-12',
-    phone: '555-123-4567',
     profile_photo_url: 'https://picsum.photos/id/237/200',
     team_name: 'Sacramento District PAO'
 };

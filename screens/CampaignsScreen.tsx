@@ -1,13 +1,12 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Card from '../components/Card';
 import Button from '../components/Button';
-import { MOCK_CAMPAIGNS } from '../data/mockData';
 import { useUser } from '../App';
 import { UserRole } from '../types';
-import { PlusCircle, Search } from 'lucide-react';
+import { PlusCircle, Search, Loader } from 'lucide-react';
 import type { Campaign } from '../types';
 import { CampaignStatus } from '../types';
+import { supabase } from '../lib/supabaseClient';
 
 
 const CampaignRow: React.FC<{ campaign: Campaign }> = ({ campaign }) => {
@@ -35,11 +34,39 @@ const CampaignRow: React.FC<{ campaign: Campaign }> = ({ campaign }) => {
 
 
 const CampaignsScreen: React.FC = () => {
-    const { hasPermission } = useUser();
+    const { user, hasPermission } = useUser();
     const canCreate = hasPermission([UserRole.CHIEF, UserRole.ADMIN]);
+    const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
 
-    const filteredCampaigns = MOCK_CAMPAIGNS.filter(campaign =>
+    useEffect(() => {
+        const fetchCampaigns = async () => {
+            if (!user?.team_id) {
+                setError("User team not found.");
+                setLoading(false);
+                return;
+            }
+
+            const { data, error } = await supabase
+                .from('campaigns')
+                .select('*')
+                .eq('team_id', user.team_id);
+
+            if (error) {
+                setError(error.message);
+                console.error("Error fetching campaigns:", error);
+            } else {
+                setCampaigns(data as Campaign[] || []);
+            }
+            setLoading(false);
+        };
+
+        fetchCampaigns();
+    }, [user?.team_id]);
+
+    const filteredCampaigns = campaigns.filter(campaign =>
         campaign.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
     
@@ -65,24 +92,38 @@ const CampaignsScreen: React.FC = () => {
             </div>
 
             <Card>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left">
-                        <thead className="text-xs text-gray-400 uppercase bg-usace-card">
-                            <tr>
-                                <th className="p-4">Name</th>
-                                <th className="p-4">Status</th>
-                                <th className="p-4">Start Date</th>
-                                <th className="p-4">End Date</th>
-                                <th className="p-4">Owner</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredCampaigns.map(campaign => (
-                                <CampaignRow key={campaign.id} campaign={campaign} />
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                {loading ? (
+                    <div className="flex justify-center items-center p-8">
+                        <Loader className="h-6 w-6 animate-spin text-usace-red" />
+                    </div>
+                ) : error ? (
+                    <div className="p-4 text-center text-red-400">{`Error: ${error}`}</div>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm text-left">
+                            <thead className="text-xs text-gray-400 uppercase bg-usace-card">
+                                <tr>
+                                    <th className="p-4">Name</th>
+                                    <th className="p-4">Status</th>
+                                    <th className="p-4">Start Date</th>
+                                    <th className="p-4">End Date</th>
+                                    <th className="p-4">Owner</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredCampaigns.length > 0 ? (
+                                    filteredCampaigns.map(campaign => (
+                                        <CampaignRow key={campaign.id} campaign={campaign} />
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan={5} className="p-4 text-center text-gray-400">No campaigns found.</td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </Card>
         </div>
     );

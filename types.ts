@@ -1,4 +1,3 @@
-
 export enum UserRole {
     STAFF = 'staff',
     CHIEF = 'chief',
@@ -8,11 +7,9 @@ export enum UserRole {
 export interface User {
     id: string;
     email: string;
-    name: string;
+    full_name: string;
     role: UserRole;
     team_id: string;
-    rank?: string;
-    phone?: string;
     profile_photo_url?: string;
     team_name: string;
 }
@@ -52,7 +49,7 @@ export enum InputType {
 }
 
 export interface Input {
-    id: string;
+    id:string;
     type: InputType;
     title: string;
     link_url?: string;

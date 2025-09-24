@@ -8,7 +8,7 @@ const InputField: React.FC<{
     name: string;
     label: string;
     value: string;
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
     type?: string;
     disabled?: boolean;
 }> = ({name, label, value, onChange, type="text", disabled = false}) => (
@@ -21,18 +21,18 @@ const InputField: React.FC<{
             value={value}
             onChange={onChange}
             disabled={disabled}
-            className="w-full bg-usace-border rounded-md p-2 text-sm text-gray-200 focus:ring-usace-red focus:border-usace-red disabled:opacity-50"
+            className="w-full bg-usace-border rounded-md p-2 text-sm text-gray-200 focus:ring-usace-red focus:border-usace-red disabled:opacity-50 disabled:cursor-not-allowed"
         />
     </div>
 );
 
 const ProfileScreen: React.FC = () => {
     const { user } = useUser();
+    // This component will only render if user is not null, so we can assert it.
+    const currentUser = user!; 
+
     const [profile, setProfile] = useState({
-        name: user.name,
-        email: user.email,
-        rank: user.rank || '',
-        phone: user.phone || '',
+        full_name: currentUser.full_name,
     });
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -46,17 +46,17 @@ const ProfileScreen: React.FC = () => {
             <Card>
                 <form className="space-y-6">
                     <div className="flex items-center space-x-6">
-                        <img src={user.profile_photo_url} alt="Profile" className="w-24 h-24 rounded-full object-cover" />
+                        <img src={currentUser.profile_photo_url} alt="Profile" className="w-24 h-24 rounded-full object-cover" />
                         <div>
                             <Button type="button" variant="secondary">Change Photo</Button>
                             <p className="text-xs text-gray-400 mt-2">JPG or PNG. 1MB max.</p>
                         </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <InputField name="name" label="Name" value={profile.name} onChange={handleInputChange} />
-                        <InputField name="email" label="Email" value={profile.email} disabled onChange={() => {}} />
-                        <InputField name="rank" label="Rank / Grade" value={profile.rank} onChange={handleInputChange} />
-                        <InputField name="phone" label="Phone Number" value={profile.phone} onChange={handleInputChange} />
+                        <InputField name="full_name" label="Full Name" value={profile.full_name} onChange={handleInputChange} />
+                        <InputField name="email" label="Email" value={currentUser.email} disabled />
+                        <InputField name="role" label="Assigned Role" value={currentUser.role} disabled />
+                        <InputField name="team_name" label="Team" value={currentUser.team_name} disabled />
                     </div>
                     <div className="pt-4 flex justify-end">
                         <Button Icon={Save}>Save Changes</Button>

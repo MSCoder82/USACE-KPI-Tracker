@@ -1,10 +1,13 @@
-
 import React from 'react';
 import { useUser } from '../App';
 import { Bell, LogOut } from 'lucide-react';
 
 const Header: React.FC = () => {
     const { user, logout } = useUser();
+
+    if (!user) {
+        return null; // Should not happen if App component logic is correct
+    }
 
     return (
         <header className="h-20 bg-usace-card flex-shrink-0 flex items-center justify-between px-6 border-b border-usace-border">
@@ -22,7 +25,7 @@ const Header: React.FC = () => {
                         alt="User Avatar"
                     />
                     <div>
-                        <p className="font-semibold text-white text-sm">{user.name}</p>
+                        <p className="font-semibold text-white text-sm">{user.full_name}</p>
                         <p className="text-gray-400 text-xs capitalize">{user.role} - {user.team_name}</p>
                     </div>
                 </div>

@@ -1,11 +1,8 @@
 import React, { useState } from 'react';
 import Button from '../components/Button';
-import { LogIn } from 'lucide-react';
+import { LogIn, Loader } from 'lucide-react';
 import Logo from '../components/Logo';
-
-interface AuthScreenProps {
-    onLogin: () => void;
-}
+import { supabase } from '../lib/supabaseClient';
 
 const AuthInput: React.FC<{id: string, type: string, placeholder: string, value: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void}> = ({id, type, placeholder, value, onChange}) => (
     <input
@@ -20,17 +17,46 @@ const AuthInput: React.FC<{id: string, type: string, placeholder: string, value:
     />
 );
 
-const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
+const AuthScreen: React.FC = () => {
     const [isSignIn, setIsSignIn] = useState(true);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [fullName, setFullName] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [message, setMessage] = useState<string | null>(null);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Here you would typically call an authentication API.
-        // For this demo, we'll just call the onLogin callback to simulate success.
-        onLogin();
+        setLoading(true);
+        setError(null);
+        setMessage(null);
+
+        if (isSignIn) {
+            const { error } = await supabase.auth.signInWithPassword({ email, password });
+            if (error) setError(error.message);
+        } else {
+            const { data, error } = await supabase.auth.signUp({
+                email,
+                password,
+                options: {
+                    data: {
+                        full_name: fullName,
+                        // You can add default role or team here if needed
+                        // role: 'staff', 
+                        // team_name: 'Default Team',
+                    }
+                }
+            });
+            if (error) {
+                setError(error.message);
+            } else if (data.user?.identities?.length === 0) {
+                 setError("This user already exists. Please try signing in.");
+            } else {
+                setMessage("Success! Please check your email for a verification link.");
+            }
+        }
+        setLoading(false);
     };
     
     return (
@@ -44,13 +70,16 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
                 
                 <div className="bg-usace-card p-8 rounded-lg shadow-lg border border-usace-border">
                     <div className="flex border-b border-usace-border mb-6">
-                        <button onClick={() => setIsSignIn(true)} className={`w-1/2 py-3 text-sm font-medium ${isSignIn ? 'text-usace-red border-b-2 border-usace-red' : 'text-gray-400'}`}>
+                        <button onClick={() => { setIsSignIn(true); setError(null); setMessage(null); }} className={`w-1/2 py-3 text-sm font-medium ${isSignIn ? 'text-usace-red border-b-2 border-usace-red' : 'text-gray-400'}`}>
                             Sign In
                         </button>
-                        <button onClick={() => setIsSignIn(false)} className={`w-1/2 py-3 text-sm font-medium ${!isSignIn ? 'text-usace-red border-b-2 border-usace-red' : 'text-gray-400'}`}>
+                        <button onClick={() => { setIsSignIn(false); setError(null); setMessage(null); }} className={`w-1/2 py-3 text-sm font-medium ${!isSignIn ? 'text-usace-red border-b-2 border-usace-red' : 'text-gray-400'}`}>
                             Sign Up
                         </button>
                     </div>
+
+                    {error && <p className="mb-4 text-center text-sm text-red-400 bg-red-500/10 p-2 rounded">{error}</p>}
+                    {message && <p className="mb-4 text-center text-sm text-green-400 bg-green-500/10 p-2 rounded">{message}</p>}
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {!isSignIn && (
@@ -65,8 +94,8 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
                             </div>
                         )}
 
-                        <Button type="submit" className="w-full" Icon={LogIn}>
-                            {isSignIn ? 'Sign In' : 'Create Account'}
+                        <Button type="submit" className="w-full" Icon={loading ? Loader : LogIn} disabled={loading}>
+                            {loading ? (isSignIn ? 'Signing In...' : 'Creating Account...') : (isSignIn ? 'Sign In' : 'Create Account')}
                         </Button>
                     </form>
                 </div>
