@@ -7,6 +7,8 @@ import { PlusCircle, Search, Loader } from 'lucide-react';
 import type { Campaign } from '../types';
 import { CampaignStatus } from '../types';
 import { supabase } from '../lib/supabaseClient';
+import Modal from '../components/Modal';
+import NewCampaignForm from '../components/NewCampaignForm';
 
 
 const CampaignRow: React.FC<{ campaign: Campaign }> = ({ campaign }) => {
@@ -27,7 +29,7 @@ const CampaignRow: React.FC<{ campaign: Campaign }> = ({ campaign }) => {
             </td>
             <td className="p-4 text-gray-300">{campaign.start_date || 'N/A'}</td>
             <td className="p-4 text-gray-300">{campaign.end_date || 'N/A'}</td>
-            <td className="p-4 text-gray-300">John Public</td>
+            <td className="p-4 text-gray-300">{campaign.profiles?.full_name || 'N/A'}</td>
         </tr>
     )
 };
@@ -40,6 +42,7 @@ const CampaignsScreen: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     useEffect(() => {
         const fetchCampaigns = async () => {
@@ -51,8 +54,9 @@ const CampaignsScreen: React.FC = () => {
 
             const { data, error } = await supabase
                 .from('campaigns')
-                .select('*')
-                .eq('team_id', user.team_id);
+                .select('*, profiles!owner_id(full_name)')
+                .eq('team_id', user.team_id)
+                .order('created_at', { ascending: false });
 
             if (error) {
                 setError(error.message);
@@ -66,6 +70,12 @@ const CampaignsScreen: React.FC = () => {
         fetchCampaigns();
     }, [user?.team_id]);
 
+    const handleNewCampaignSuccess = (newCampaign: Campaign) => {
+        // Add new campaign to the top of the list for immediate UI update
+        setCampaigns(prevCampaigns => [newCampaign, ...prevCampaigns]);
+        setIsModalOpen(false);
+    };
+
     const filteredCampaigns = campaigns.filter(campaign =>
         campaign.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
@@ -75,7 +85,7 @@ const CampaignsScreen: React.FC = () => {
             <div className="flex justify-between items-center">
                 <h1 className="text-3xl font-bold text-white">Team Campaigns</h1>
                 {canCreate && (
-                    <Button Icon={PlusCircle}>New Campaign</Button>
+                    <Button Icon={PlusCircle} onClick={() => setIsModalOpen(true)}>New Campaign</Button>
                 )}
             </div>
 
@@ -125,6 +135,12 @@ const CampaignsScreen: React.FC = () => {
                     </div>
                 )}
             </Card>
+
+            {isModalOpen && (
+                <Modal title="Create New Campaign" onClose={() => setIsModalOpen(false)}>
+                    <NewCampaignForm onSuccess={handleNewCampaignSuccess} />
+                </Modal>
+            )}
         </div>
     );
 };

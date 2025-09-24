@@ -30,6 +30,8 @@ export interface Campaign {
     end_date?: string;
     owner_id: string;
     status: CampaignStatus;
+    created_at?: string;
+    profiles?: { full_name: string };
 }
 
 export interface Goal {
