@@ -1,7 +1,9 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Megaphone, FileText, CheckSquare, Users, Tv, Bot, Share2, User } from 'lucide-react';
+import { Home, Megaphone, FileText, CheckSquare, Users, Tv, Bot, Share2, User, Shield } from 'lucide-react';
 import Logo from './Logo';
+import { useUser } from '../App';
+import { UserRole } from '../types';
 
 const icons = {
     dashboard: Home,
@@ -13,9 +15,11 @@ const icons = {
     'ai-complan': Bot,
     social: Share2,
     profile: User,
+    admin: Shield,
 };
 
 const Sidebar: React.FC = () => {
+    const { user } = useUser();
     // FIX: Add explicit type to navItems to ensure icon property matches 'keyof typeof icons'.
     const navItems: { path: string; label: string; icon: keyof typeof icons }[] = [
         { path: '/', label: 'Dashboard', icon: 'dashboard' },
@@ -57,6 +61,11 @@ const Sidebar: React.FC = () => {
                 {navItems.map((item) => (
                     <NavItem key={item.path} {...item} />
                 ))}
+                {user?.role === UserRole.ADMIN && (
+                    <div className="pt-4 mt-4 border-t border-usace-border">
+                         <NavItem path="/admin" label="Admin" icon="admin" />
+                    </div>
+                )}
             </nav>
         </div>
     );

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { useUser } from '../App';
 import Button from './Button';
@@ -7,17 +7,31 @@ import type { Campaign } from '../types';
 import { CampaignStatus } from '../types';
 
 interface NewCampaignFormProps {
-    onSuccess: (newCampaign: Campaign) => void;
+    onSuccess: (campaign: Campaign) => void;
+    campaignToEdit?: Campaign | null;
 }
 
-const NewCampaignForm: React.FC<NewCampaignFormProps> = ({ onSuccess }) => {
+const NewCampaignForm: React.FC<NewCampaignFormProps> = ({ onSuccess, campaignToEdit }) => {
     const { user } = useUser();
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
+    const [status, setStatus] = useState<CampaignStatus>(CampaignStatus.PLANNED);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    const isEditMode = !!campaignToEdit;
+
+    useEffect(() => {
+        if (isEditMode) {
+            setName(campaignToEdit.name);
+            setDescription(campaignToEdit.description || '');
+            setStartDate(campaignToEdit.start_date || '');
+            setEndDate(campaignToEdit.end_date || '');
+            setStatus(campaignToEdit.status);
+        }
+    }, [campaignToEdit, isEditMode]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -29,25 +43,43 @@ const NewCampaignForm: React.FC<NewCampaignFormProps> = ({ onSuccess }) => {
         setLoading(true);
         setError(null);
 
-        const { data, error: insertError } = await supabase
-            .from('campaigns')
-            .insert({
-                name,
-                description,
-                start_date: startDate || null,
-                end_date: endDate || null,
-                owner_id: user.id,
-                team_id: user.team_id,
-                status: CampaignStatus.PLANNED,
-            })
-            .select('*, profiles!owner_id(full_name)')
-            .single();
+        const campaignData = {
+            name,
+            description,
+            start_date: startDate || null,
+            end_date: endDate || null,
+            owner_id: user.id,
+            team_id: user.team_id,
+            status,
+        };
+
+        let data: Campaign | null = null;
+        let submissionError: any = null;
+
+        if (isEditMode) {
+            const { data: updateData, error: updateError } = await supabase
+                .from('campaigns')
+                .update(campaignData)
+                .eq('id', campaignToEdit.id)
+                .select('*, profiles!owner_id(full_name)')
+                .single();
+            data = updateData;
+            submissionError = updateError;
+        } else {
+            const { data: insertData, error: insertError } = await supabase
+                .from('campaigns')
+                .insert(campaignData)
+                .select('*, profiles!owner_id(full_name)')
+                .single();
+            data = insertData;
+            submissionError = insertError;
+        }
 
         setLoading(false);
 
-        if (insertError) {
-            setError(insertError.message);
-            console.error("Error creating campaign:", insertError);
+        if (submissionError) {
+            setError(submissionError.message);
+            console.error("Error submitting campaign:", submissionError);
         } else if (data) {
             onSuccess(data as Campaign);
         }
@@ -88,7 +120,7 @@ const NewCampaignForm: React.FC<NewCampaignFormProps> = ({ onSuccess }) => {
                         id="start_date"
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
-                        className="w-full bg-usace-border rounded-md p-2 text-sm text-gray-200 focus:ring-usace-red focus:border-usace-red"
+                        className="w-full bg-usace-border rounded-md p-2 text-sm text-gray-200"
                     />
                 </div>
                 <div>
@@ -98,14 +130,30 @@ const NewCampaignForm: React.FC<NewCampaignFormProps> = ({ onSuccess }) => {
                         id="end_date"
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
-                        className="w-full bg-usace-border rounded-md p-2 text-sm text-gray-200 focus:ring-usace-red focus:border-usace-red"
+                        className="w-full bg-usace-border rounded-md p-2 text-sm text-gray-200"
                     />
                 </div>
             </div>
 
+            {isEditMode && (
+                <div>
+                    <label htmlFor="status" className="block text-sm font-medium text-gray-300 mb-1">Status</label>
+                    <select
+                        id="status"
+                        value={status}
+                        onChange={(e) => setStatus(e.target.value as CampaignStatus)}
+                        className="w-full bg-usace-border rounded-md p-2 text-sm text-gray-200 focus:ring-usace-red focus:border-usace-red"
+                    >
+                        {Object.values(CampaignStatus).map(s => (
+                            <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                        ))}
+                    </select>
+                </div>
+            )}
+
             <div className="flex justify-end pt-2">
                 <Button type="submit" Icon={loading ? Loader : undefined} disabled={loading}>
-                    {loading ? 'Creating...' : 'Create Campaign'}
+                    {loading ? (isEditMode ? 'Saving...' : 'Creating...') : (isEditMode ? 'Save Changes' : 'Create Campaign')}
                 </Button>
             </div>
         </form>

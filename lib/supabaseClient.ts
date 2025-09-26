@@ -43,7 +43,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 export const getProfile = async (userId: string, userEmail: string): Promise<User | null> => {
     const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('*, teams(id, name)')
         .eq('id', userId)
         .single();
 
@@ -55,16 +55,60 @@ export const getProfile = async (userId: string, userEmail: string): Promise<Use
     }
 
     if (data) {
+        // Construct the full URL for the profile photo
+        let photoUrl = `https://picsum.photos/seed/${data.id}/200`; // default placeholder
+        if (data.profile_photo_url) {
+            const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(data.profile_photo_url);
+            photoUrl = publicUrl;
+        }
+
         return {
             id: data.id,
             email: userEmail,
             full_name: data.full_name,
             role: data.role as UserRole,
             team_id: data.team_id,
-            team_name: data.team_name,
-            profile_photo_url: data.profile_photo_url || `https://picsum.photos/seed/${data.id}/200`,
+            teams: data.teams as { id: string, name: string } | null,
+            profile_photo_url: photoUrl,
         };
     }
 
     return null;
+};
+
+/**
+ * Uploads a new avatar image to the 'avatars' storage bucket.
+ * @param userId The ID of the user uploading the file.
+ * @param file The file object to upload.
+ * @returns The path of the uploaded file.
+ */
+export const uploadAvatar = async (userId: string, file: File) => {
+    const fileExt = file.name.split('.').pop();
+    const filePath = `${userId}-${Date.now()}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file);
+
+    if (uploadError) {
+        throw uploadError;
+    }
+
+    return filePath;
+};
+
+/**
+ * Updates the user's profile with the new photo URL.
+ * @param userId The ID of the user.
+ * @param photoPath The path of the photo in the storage bucket.
+ */
+export const updateUserProfilePhoto = async (userId: string, photoPath: string) => {
+    const { error } = await supabase
+        .from('profiles')
+        .update({ profile_photo_url: photoPath })
+        .eq('id', userId);
+
+    if (error) {
+        throw error;
+    }
 };

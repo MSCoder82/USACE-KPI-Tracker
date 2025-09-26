@@ -1,9 +1,10 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import { generateComplan } from '../services/geminiService';
-import type { ComplanSection } from '../types';
-import { MOCK_CAMPAIGNS } from '../data/mockData';
+import type { ComplanSection, Campaign } from '../types';
+import { supabase } from '../lib/supabaseClient';
+import { useUser } from '../App';
 import { Bot, Loader, Upload } from 'lucide-react';
 
 type ComplanInputs = {
@@ -38,9 +39,11 @@ const TextareaField: React.FC<{
 
 
 const AIComplanScreen: React.FC = () => {
+    const { user } = useUser();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [plan, setPlan] = useState<ComplanSection[] | null>(null);
+    const [campaigns, setCampaigns] = useState<Pick<Campaign, 'id' | 'name'>[]>([]);
     const [inputs, setInputs] = useState<ComplanInputs>({
         campaignId: '',
         objectives: '',
@@ -51,6 +54,22 @@ const AIComplanScreen: React.FC = () => {
         constraints: '',
         kpi_targets: '',
     });
+
+    useEffect(() => {
+        if (!user?.team_id) return;
+        const fetchCampaigns = async () => {
+            const { data, error } = await supabase
+                .from('campaigns')
+                .select('id, name')
+                .eq('team_id', user.team_id)
+                .order('name', { ascending: true });
+            
+            if (data) {
+                setCampaigns(data);
+            }
+        };
+        fetchCampaigns();
+    }, [user]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -63,7 +82,7 @@ const AIComplanScreen: React.FC = () => {
         setPlan(null);
 
         const formattedInputs = {
-            campaignName: MOCK_CAMPAIGNS.find(c => c.id === inputs.campaignId)?.name || 'N/A',
+            campaignName: campaigns.find(c => c.id === inputs.campaignId)?.name || 'N/A',
             objectives: inputs.objectives.split('\n').filter(Boolean),
             audiences: inputs.audiences.split('\n').filter(Boolean),
             key_messages: inputs.key_messages.split('\n').filter(Boolean),
@@ -93,7 +112,7 @@ const AIComplanScreen: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [inputs]);
+    }, [inputs, campaigns]);
 
     return (
         <div className="space-y-6">
@@ -106,7 +125,7 @@ const AIComplanScreen: React.FC = () => {
                             <label htmlFor="campaignId" className="block text-sm font-medium text-gray-300 mb-1">Campaign</label>
                             <select id="campaignId" name="campaignId" value={inputs.campaignId} onChange={handleInputChange} className="w-full bg-usace-border rounded-md p-2 text-sm text-gray-200 focus:ring-usace-red focus:border-usace-red">
                                 <option value="">Select a campaign</option>
-                                {MOCK_CAMPAIGNS.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                {campaigns.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                             </select>
                         </div>
                         <TextareaField name="objectives" label="Objectives (one per line)" value={inputs.objectives} onChange={handleInputChange} />

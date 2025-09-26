@@ -26,7 +26,7 @@ const Header: React.FC = () => {
                     />
                     <div>
                         <p className="font-semibold text-white text-sm">{user.full_name}</p>
-                        <p className="text-gray-400 text-xs capitalize">{user.role} - {user.team_name}</p>
+                        <p className="text-gray-400 text-xs capitalize">{user.role} - {user.teams?.name || 'No Team'}</p>
                     </div>
                 </div>
                  <button 

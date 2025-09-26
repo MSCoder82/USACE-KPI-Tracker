@@ -17,11 +17,13 @@ import AIComplanScreen from './screens/AIComplanScreen';
 import SocialScreen from './screens/SocialScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import AuthScreen from './screens/AuthScreen';
+import AdminScreen from './screens/AdminScreen'; // Import the new Admin Screen
 import { Loader } from 'lucide-react';
 
 interface UserContextType {
     user: User | null;
     logout: () => void;
+    updateUser: (updatedFields: Partial<User>) => void;
 }
 
 export const UserContext = createContext<UserContextType | null>(null);
@@ -31,9 +33,9 @@ export const useUser = () => {
     if (!context) {
         throw new Error("useUser must be used within a UserProvider");
     }
-    const { user, logout } = context;
+    const { user, logout, updateUser } = context;
     const hasPermission = (roles: UserRole[]) => user ? roles.includes(user.role) : false;
-    return { user, hasPermission, logout };
+    return { user, hasPermission, logout, updateUser };
 };
 
 const App: React.FC = () => {
@@ -72,6 +74,10 @@ const App: React.FC = () => {
     const handleLogout = async () => {
         await supabase.auth.signOut();
     };
+
+    const handleUpdateUser = (updatedFields: Partial<User>) => {
+        setUser(prevUser => prevUser ? { ...prevUser, ...updatedFields } : null);
+    };
     
     if (loading) {
         return (
@@ -86,7 +92,7 @@ const App: React.FC = () => {
     }
 
     return (
-        <UserContext.Provider value={{ user, logout: handleLogout }}>
+        <UserContext.Provider value={{ user, logout: handleLogout, updateUser: handleUpdateUser }}>
             <div className="flex h-screen bg-usace-bg text-gray-200">
                 <Sidebar />
                 <div className="flex-1 flex flex-col overflow-hidden">
@@ -102,6 +108,12 @@ const App: React.FC = () => {
                             <Route path="/ai-complan" element={<AIComplanScreen />} />
                             <Route path="/social" element={<SocialScreen />} />
                             <Route path="/profile" element={<ProfileScreen />} />
+                            <Route 
+                                path="/admin" 
+                                element={
+                                    user.role === UserRole.ADMIN ? <AdminScreen /> : <Navigate to="/" />
+                                } 
+                            />
                             <Route path="*" element={<Navigate to="/" />} />
                         </Routes>
                     </main>
