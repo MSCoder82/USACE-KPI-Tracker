@@ -3,33 +3,50 @@ import type { User } from '../types';
 import { UserRole } from '../types';
 
 // =================================================================================
-// The client now reads from the .env.local file.
+// The client now reads from the .env.local file (Vite environment).
 // You MUST create a .env.local file in the root of your project
-// and add your Supabase credentials there.
+// and add your Supabase credentials there using the Vite `VITE_` prefix.
 //
-// REACT_APP_SUPABASE_URL="YOUR_SUPABASE_URL"
-// REACT_APP_SUPABASE_ANON_KEY="YOUR_SUPABASE_ANON_KEY"
+// VITE_SUPABASE_URL="YOUR_SUPABASE_URL"
+// VITE_SUPABASE_ANON_KEY="YOUR_SUPABASE_ANON_KEY"
 // =================================================================================
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
-const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
+const viteEnv = typeof import.meta !== 'undefined' ? (import.meta as unknown as { env?: Record<string, string | undefined> }).env ?? {} : {};
+
+const supabaseUrl = (
+    viteEnv?.VITE_SUPABASE_URL ??
+    viteEnv?.REACT_APP_SUPABASE_URL ??
+    process.env.VITE_SUPABASE_URL ??
+    process.env.REACT_APP_SUPABASE_URL
+) as string | undefined;
+
+const supabaseAnonKey = (
+    viteEnv?.VITE_SUPABASE_ANON_KEY ??
+    viteEnv?.REACT_APP_SUPABASE_ANON_KEY ??
+    process.env.VITE_SUPABASE_ANON_KEY ??
+    process.env.REACT_APP_SUPABASE_ANON_KEY
+) as string | undefined;
 
 
-if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === 'YOUR_SUPABASE_URL') {
-    const errorDiv = document.createElement('div');
-    errorDiv.style.position = 'fixed';
-    errorDiv.style.top = '10px';
-    errorDiv.style.left = '10px';
-    errorDiv.style.padding = '10px';
-    errorDiv.style.background = 'red';
-    errorDiv.style.color = 'white';
-    errorDiv.style.zIndex = '1000';
-    errorDiv.style.fontSize = '14px';
-    errorDiv.style.borderRadius = '5px';
-    errorDiv.innerHTML = '<b>CRITICAL ERROR:</b> Supabase client is not configured. Please open the <code>.env.local</code> file in your project and add your Supabase URL and Anon Key.';
-    document.body.prepend(errorDiv);
-    
+const missingSupabaseConfig = !supabaseUrl || !supabaseAnonKey || supabaseUrl === 'YOUR_SUPABASE_URL';
+
+if (missingSupabaseConfig) {
+    if (typeof document !== 'undefined') {
+        const errorDiv = document.createElement('div');
+        errorDiv.style.position = 'fixed';
+        errorDiv.style.top = '10px';
+        errorDiv.style.left = '10px';
+        errorDiv.style.padding = '10px';
+        errorDiv.style.background = 'red';
+        errorDiv.style.color = 'white';
+        errorDiv.style.zIndex = '1000';
+        errorDiv.style.fontSize = '14px';
+        errorDiv.style.borderRadius = '5px';
+        errorDiv.innerHTML = '<b>CRITICAL ERROR:</b> Supabase client is not configured. Please open the <code>.env.local</code> file in your project and add your Supabase URL and Anon Key.';
+        document.body.prepend(errorDiv);
+    }
+
     // Throw an error to stop execution
-    throw new Error("Supabase credentials are not configured in .env.local file.");
+    throw new Error('Supabase credentials are not configured in .env.local file.');
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
