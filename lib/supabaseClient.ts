@@ -13,26 +13,22 @@ import { UserRole } from '../types';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
+export const isSupabaseConfigured = Boolean(
+    supabaseUrl &&
+    supabaseAnonKey &&
+    supabaseUrl !== 'YOUR_SUPABASE_URL'
+);
 
-if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === 'YOUR_SUPABASE_URL') {
-    const errorDiv = document.createElement('div');
-    errorDiv.style.position = 'fixed';
-    errorDiv.style.top = '10px';
-    errorDiv.style.left = '10px';
-    errorDiv.style.padding = '10px';
-    errorDiv.style.background = 'red';
-    errorDiv.style.color = 'white';
-    errorDiv.style.zIndex = '1000';
-    errorDiv.style.fontSize = '14px';
-    errorDiv.style.borderRadius = '5px';
-    errorDiv.innerHTML = '<b>CRITICAL ERROR:</b> Supabase client is not configured. Please open the <code>.env.local</code> file in your project and add your Supabase URL and Anon Key.';
-    document.body.prepend(errorDiv);
-    
-    // Throw an error to stop execution
-    throw new Error("Supabase credentials are not configured in .env.local file.");
+if (!isSupabaseConfigured) {
+    console.error(
+        'Supabase client is not configured. Please create a .env.local file and add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.'
+    );
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = isSupabaseConfigured
+    ? createClient(supabaseUrl!, supabaseAnonKey!)
+    // We guard all runtime usage of supabase when the configuration is missing.
+    : null as unknown as ReturnType<typeof createClient>;
 
 /**
  * Fetches the public profile for a given user ID.

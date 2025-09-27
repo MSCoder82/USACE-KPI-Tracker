@@ -2,7 +2,7 @@ import React, { useState, useEffect, createContext, useContext } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import type { User } from './types';
 import { UserRole } from './types';
-import { supabase, getProfile } from './lib/supabaseClient';
+import { supabase, getProfile, isSupabaseConfigured } from './lib/supabaseClient';
 import type { Session } from '@supabase/supabase-js';
 
 import Sidebar from './components/Sidebar';
@@ -44,6 +44,11 @@ const App: React.FC = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        if (!isSupabaseConfigured) {
+            setLoading(false);
+            return;
+        }
+
         const fetchSession = async () => {
             const { data: { session } } = await supabase.auth.getSession();
             setSession(session);
@@ -72,6 +77,9 @@ const App: React.FC = () => {
     }, []);
 
     const handleLogout = async () => {
+        if (!isSupabaseConfigured) {
+            return;
+        }
         await supabase.auth.signOut();
     };
 
@@ -83,6 +91,21 @@ const App: React.FC = () => {
         return (
             <div className="flex h-screen w-screen items-center justify-center bg-usace-bg">
                 <Loader className="h-8 w-8 animate-spin text-usace-red" />
+            </div>
+        );
+    }
+
+    if (!isSupabaseConfigured) {
+        return (
+            <div className="flex min-h-screen flex-col items-center justify-center bg-usace-bg p-6 text-center text-white">
+                <h1 className="mb-4 text-2xl font-semibold">Supabase configuration missing</h1>
+                <p className="max-w-lg text-gray-300">
+                    To use the USACE PAO KPI Tracker you need to create a <code>.env.local</code> file in the project root and
+                    provide the <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code> values from your Supabase project.
+                </p>
+                <p className="mt-4 max-w-lg text-gray-400">
+                    After saving the file, restart the development server and reload this page.
+                </p>
             </div>
         );
     }
