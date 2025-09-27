@@ -15,6 +15,15 @@ View your app in AI Studio: https://ai.studio/apps/drive/1jdC6VV5wE5Xbjqsm1l5FP2
 
 1. Install dependencies:
    `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+2. Create an `.env.local` file (or update the existing one) in the project root with the following values:
+
+   ```bash
+   GEMINI_API_KEY="<your Gemini API key>"
+   VITE_SUPABASE_URL="<your Supabase project URL>"
+   VITE_SUPABASE_ANON_KEY="<your Supabase anon key>"
+   ```
+
+   > **Note:** Vite only exposes environment variables prefixed with `VITE_`. Without these variables the authentication client cannot initialize and the sign-in screen will not render.
+
 3. Run the app:
    `npm run dev`

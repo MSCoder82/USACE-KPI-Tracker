@@ -3,15 +3,15 @@ import type { User } from '../types';
 import { UserRole } from '../types';
 
 // =================================================================================
-// The client now reads from the .env.local file.
+// The client now reads from the .env.local file (Vite environment).
 // You MUST create a .env.local file in the root of your project
-// and add your Supabase credentials there.
+// and add your Supabase credentials there using the Vite `VITE_` prefix.
 //
-// REACT_APP_SUPABASE_URL="YOUR_SUPABASE_URL"
-// REACT_APP_SUPABASE_ANON_KEY="YOUR_SUPABASE_ANON_KEY"
+// VITE_SUPABASE_URL="YOUR_SUPABASE_URL"
+// VITE_SUPABASE_ANON_KEY="YOUR_SUPABASE_ANON_KEY"
 // =================================================================================
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
-const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
 
 if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === 'YOUR_SUPABASE_URL') {
