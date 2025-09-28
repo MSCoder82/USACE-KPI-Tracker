@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import Button from '../components/Button';
 import { LogIn, Loader } from 'lucide-react';
-import Logo from '../components/Logo';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 
 interface AuthInputProps {
@@ -37,6 +36,7 @@ export interface AuthNotice {
 interface AuthScreenProps {
     disabled?: boolean;
     notices?: AuthNotice[];
+    supabaseConnected?: boolean;
 }
 
 const noticeStyles: Record<AuthNoticeVariant, string> = {
@@ -45,7 +45,7 @@ const noticeStyles: Record<AuthNoticeVariant, string> = {
     error: 'border-red-500/40 bg-red-500/10 text-red-300',
 };
 
-const AuthScreen: React.FC<AuthScreenProps> = ({ disabled = false, notices }) => {
+const AuthScreen: React.FC<AuthScreenProps> = ({ disabled = false, notices, supabaseConnected }) => {
     const [isSignIn, setIsSignIn] = useState(true);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -95,11 +95,23 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ disabled = false, notices }) =>
     return (
         <div className="min-h-screen bg-usace-bg flex flex-col justify-center items-center p-4">
             <div className="w-full max-w-md">
-                <div className="flex justify-center mb-6">
-                     <Logo className="h-20" />
+                <div className="flex flex-col items-center mb-8">
+                    <h1 className="text-3xl font-bold text-center text-white tracking-tight">
+                        USACE PAO KPI Tracker
+                    </h1>
+                    <p className="text-center text-gray-400 mt-2">Please sign in to continue</p>
+                    {typeof supabaseConnected === 'boolean' && (
+                        <span
+                            className={`mt-4 inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium tracking-wide ${
+                                supabaseConnected
+                                    ? 'border-green-500/40 bg-green-500/10 text-green-300'
+                                    : 'border-red-500/40 bg-red-500/10 text-red-300'
+                            }`}
+                        >
+                            {supabaseConnected ? 'Supabase connection active' : 'Supabase not connected'}
+                        </span>
+                    )}
                 </div>
-                <h1 className="text-2xl font-bold text-center text-white mb-2">USACE PAO KPI Tracker</h1>
-                <p className="text-center text-gray-400 mb-8">Please sign in to continue</p>
 
                 <div className="bg-usace-card p-8 rounded-lg shadow-lg border border-usace-border">
                     {notices && notices.length > 0 && (

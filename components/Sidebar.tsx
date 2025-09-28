@@ -1,7 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { Home, Megaphone, FileText, CheckSquare, Users, Tv, Bot, Share2, User, Shield } from 'lucide-react';
-import Logo from './Logo';
 import { useUser } from '../App';
 import { UserRole } from '../types';
 
@@ -54,8 +53,9 @@ const Sidebar: React.FC = () => {
 
     return (
         <div className="w-64 bg-usace-black flex-shrink-0 flex flex-col border-r border-usace-border">
-            <div className="flex items-center justify-center h-20 border-b border-usace-border">
-                 <Logo className="h-12" />
+            <div className="flex flex-col items-center justify-center h-20 border-b border-usace-border px-4 text-center">
+                <span className="text-lg font-semibold tracking-wide text-white">USACE PAO</span>
+                <span className="text-sm text-gray-400">KPI Tracker</span>
             </div>
             <nav className="flex-1 px-4 py-6 space-y-2">
                 {navItems.map((item) => (
