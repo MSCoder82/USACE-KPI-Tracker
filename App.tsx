@@ -2,7 +2,7 @@ import React, { useState, useEffect, createContext, useContext } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import type { User } from './types';
 import { UserRole } from './types';
-import { supabase, getProfile, isSupabaseConfigured } from './lib/supabaseClient';
+import { supabase, getProfile, isSupabaseConfigured, supabaseInitError } from './lib/supabaseClient';
 import type { Session } from '@supabase/supabase-js';
 
 import Sidebar from './components/Sidebar';
@@ -16,7 +16,7 @@ import MediaScreen from './screens/MediaScreen';
 import AIComplanScreen from './screens/AIComplanScreen';
 import SocialScreen from './screens/SocialScreen';
 import ProfileScreen from './screens/ProfileScreen';
-import AuthScreen from './screens/AuthScreen';
+import AuthScreen, { type AuthNotice } from './screens/AuthScreen';
 import AdminScreen from './screens/AdminScreen'; // Import the new Admin Screen
 import { Loader } from 'lucide-react';
 
@@ -42,6 +42,7 @@ const App: React.FC = () => {
     const [session, setSession] = useState<Session | null>(null);
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
+    const [authError, setAuthError] = useState<string | null>(null);
 
     useEffect(() => {
         if (!isSupabaseConfigured) {
@@ -50,13 +51,37 @@ const App: React.FC = () => {
         }
 
         const fetchSession = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            setSession(session);
-            if (session) {
-                const profile = await getProfile(session.user.id, session.user.email!);
-                setUser(profile);
+            try {
+                const { data: { session }, error } = await supabase.auth.getSession();
+                if (error) {
+                    console.error('Error fetching session:', error.message);
+                    setAuthError('We could not connect to the authentication service. Please refresh the page or try again later.');
+                } else {
+                    setAuthError(null);
+                }
+
+                setSession(session);
+
+                if (session) {
+                    try {
+                        const profile = await getProfile(session.user.id, session.user.email!);
+                        setUser(profile);
+                    } catch (profileError) {
+                        console.error('Error loading profile:', profileError);
+                        setUser(null);
+                        setAuthError('We were unable to load your profile. Please try again.');
+                    }
+                } else {
+                    setUser(null);
+                }
+            } catch (error) {
+                console.error('Unexpected error fetching session:', error);
+                setSession(null);
+                setUser(null);
+                setAuthError('We could not connect to the authentication service. Please refresh the page or try again later.');
+            } finally {
+                setLoading(false);
             }
-            setLoading(false);
         };
 
         fetchSession();
@@ -64,8 +89,15 @@ const App: React.FC = () => {
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
             setSession(session);
             if (session) {
-                const profile = await getProfile(session.user.id, session.user.email!);
-                setUser(profile);
+                try {
+                    const profile = await getProfile(session.user.id, session.user.email!);
+                    setUser(profile);
+                    setAuthError(null);
+                } catch (profileError) {
+                    console.error('Error loading profile after auth state change:', profileError);
+                    setUser(null);
+                    setAuthError('We were unable to load your profile. Please try again.');
+                }
             } else {
                 setUser(null);
             }
@@ -96,10 +128,24 @@ const App: React.FC = () => {
     }
 
     if (!session || !user) {
-        return (
-            <AuthScreen
-                disabled={!isSupabaseConfigured}
-                notice={!isSupabaseConfigured ? (
+        const notices: AuthNotice[] = [];
+
+        if (!isSupabaseConfigured) {
+            if (supabaseInitError) {
+                notices.push({
+                    type: 'error',
+                    message: (
+                        <>
+                            <p className="font-semibold">Authentication configuration error</p>
+                            <p className="mt-1 text-xs text-gray-300">{supabaseInitError}</p>
+                        </>
+                    ),
+                });
+            }
+
+            notices.push({
+                type: 'warning',
+                message: (
                     <>
                         <p className="font-semibold">Supabase configuration missing</p>
                         <p className="mt-1 text-xs text-gray-300">
@@ -110,7 +156,21 @@ const App: React.FC = () => {
                             After saving the file, restart the development server and reload this page.
                         </p>
                     </>
-                ) : undefined}
+                ),
+            });
+        }
+
+        if (authError && isSupabaseConfigured) {
+            notices.push({
+                type: 'error',
+                message: authError,
+            });
+        }
+
+        return (
+            <AuthScreen
+                disabled={!isSupabaseConfigured}
+                notices={notices}
             />
         );
     }

@@ -13,22 +13,41 @@ import { UserRole } from '../types';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
-export const isSupabaseConfigured = Boolean(
+let supabaseInitializationError: string | null = null;
+let supabaseClient: ReturnType<typeof createClient> | null = null;
+
+const hasSupabaseCredentials = Boolean(
     supabaseUrl &&
     supabaseAnonKey &&
     supabaseUrl !== 'YOUR_SUPABASE_URL'
 );
 
-if (!isSupabaseConfigured) {
+if (hasSupabaseCredentials) {
+    try {
+        supabaseClient = createClient(supabaseUrl!, supabaseAnonKey!);
+    } catch (error) {
+        supabaseInitializationError = error instanceof Error ? error.message : String(error);
+        console.error('Failed to initialize Supabase client:', supabaseInitializationError);
+    }
+} else {
     console.error(
         'Supabase client is not configured. Please create a .env.local file and add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.'
     );
 }
 
-export const supabase = isSupabaseConfigured
-    ? createClient(supabaseUrl!, supabaseAnonKey!)
-    // We guard all runtime usage of supabase when the configuration is missing.
-    : null as unknown as ReturnType<typeof createClient>;
+export const isSupabaseConfigured = Boolean(supabaseClient);
+export const supabaseInitError = supabaseInitializationError;
+
+const createUnconfiguredClient = () =>
+    new Proxy({}, {
+        get(_target, property) {
+            throw new Error(
+                `Supabase client is not configured. Attempted to access "${String(property)}".`
+            );
+        }
+    }) as ReturnType<typeof createClient>;
+
+export const supabase = supabaseClient ?? createUnconfiguredClient();
 
 /**
  * Fetches the public profile for a given user ID.

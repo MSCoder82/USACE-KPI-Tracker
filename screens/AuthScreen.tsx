@@ -27,12 +27,25 @@ const AuthInput: React.FC<AuthInputProps> = ({ id, type, placeholder, value, onC
     />
 );
 
-interface AuthScreenProps {
-    disabled?: boolean;
-    notice?: React.ReactNode;
+export type AuthNoticeVariant = 'info' | 'warning' | 'error';
+
+export interface AuthNotice {
+    type: AuthNoticeVariant;
+    message: React.ReactNode;
 }
 
-const AuthScreen: React.FC<AuthScreenProps> = ({ disabled = false, notice }) => {
+interface AuthScreenProps {
+    disabled?: boolean;
+    notices?: AuthNotice[];
+}
+
+const noticeStyles: Record<AuthNoticeVariant, string> = {
+    info: 'border-blue-500/40 bg-blue-500/10 text-blue-200',
+    warning: 'border-yellow-500/40 bg-yellow-500/10 text-yellow-300',
+    error: 'border-red-500/40 bg-red-500/10 text-red-300',
+};
+
+const AuthScreen: React.FC<AuthScreenProps> = ({ disabled = false, notices }) => {
     const [isSignIn, setIsSignIn] = useState(true);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -89,9 +102,16 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ disabled = false, notice }) => 
                 <p className="text-center text-gray-400 mb-8">Please sign in to continue</p>
 
                 <div className="bg-usace-card p-8 rounded-lg shadow-lg border border-usace-border">
-                    {notice && (
-                        <div className="mb-4 rounded border border-yellow-500/40 bg-yellow-500/10 p-3 text-sm text-yellow-300">
-                            {notice}
+                    {notices && notices.length > 0 && (
+                        <div className="mb-4 space-y-3">
+                            {notices.map((notice, index) => (
+                                <div
+                                    key={index}
+                                    className={`rounded border p-3 text-sm ${noticeStyles[notice.type]}`}
+                                >
+                                    {notice.message}
+                                </div>
+                            ))}
                         </div>
                     )}
                     <div className="flex border-b border-usace-border mb-6">
