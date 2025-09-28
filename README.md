@@ -25,6 +25,8 @@ View your app in AI Studio: https://ai.studio/apps/drive/1jdC6VV5wE5Xbjqsm1l5FP2
 
    > **Note:** Vite only exposes environment variables prefixed with `VITE_`. Without these variables the authentication client cannot initialize and the sign-in screen will not render.
 
+   If you simply need to review the authentication UI without wiring up Supabase yet, append `?auth-preview=1` to the preview URL (or `/#/?auth-preview=1` when using hash routing). This toggles an interactive demo mode that keeps form submissions disabled until real Supabase credentials are configured.
+
    ### Why the Supabase URL & anon key live in `.env.local`
 
    Supabase's anon key is intentionally designed to be public. It is the same credential that ships in Supabase's own quick-start examples and it only grants the permissions defined in your project's `auth` policies. This means:

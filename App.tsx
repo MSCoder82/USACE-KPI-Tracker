@@ -43,6 +43,45 @@ const App: React.FC = () => {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const [authError, setAuthError] = useState<string | null>(null);
+    const [forceAuthPreview, setForceAuthPreview] = useState(false);
+
+    useEffect(() => {
+        const resolveAuthPreviewFlag = () => {
+            try {
+                const url = new URL(window.location.href);
+                if (url.searchParams.has('auth-preview')) {
+                    return true;
+                }
+
+                if (url.hash.includes('?')) {
+                    const [, hashQuery] = url.hash.split('?');
+                    if (hashQuery) {
+                        const hashParams = new URLSearchParams(hashQuery);
+                        if (hashParams.has('auth-preview')) {
+                            return true;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Unable to parse URL for auth preview flag:', error);
+            }
+
+            return false;
+        };
+
+        const updateAuthPreview = () => {
+            setForceAuthPreview(resolveAuthPreviewFlag());
+        };
+
+        updateAuthPreview();
+        window.addEventListener('hashchange', updateAuthPreview);
+        window.addEventListener('popstate', updateAuthPreview);
+
+        return () => {
+            window.removeEventListener('hashchange', updateAuthPreview);
+            window.removeEventListener('popstate', updateAuthPreview);
+        };
+    }, []);
 
     useEffect(() => {
         if (!isSupabaseConfigured) {
@@ -127,7 +166,8 @@ const App: React.FC = () => {
         );
     }
 
-    if (!session || !user) {
+    const shouldShowAuthScreen = !session || !user || forceAuthPreview;
+    if (shouldShowAuthScreen) {
         const notices: AuthNotice[] = [];
 
         if (!isSupabaseConfigured) {
@@ -160,6 +200,21 @@ const App: React.FC = () => {
             });
         }
 
+        if (forceAuthPreview) {
+            notices.unshift({
+                type: 'info',
+                message: (
+                    <>
+                        <p className="font-semibold">Authentication preview mode</p>
+                        <p className="mt-1 text-xs text-gray-300">
+                            You can explore the sign-in and registration screens without connecting to Supabase. Form submissions
+                            are blocked until Supabase credentials are configured.
+                        </p>
+                    </>
+                ),
+            });
+        }
+
         if (authError && isSupabaseConfigured) {
             notices.push({
                 type: 'error',
@@ -169,7 +224,7 @@ const App: React.FC = () => {
 
         return (
             <AuthScreen
-                disabled={!isSupabaseConfigured}
+                disabled={!isSupabaseConfigured && !forceAuthPreview}
                 notices={notices}
             />
         );
