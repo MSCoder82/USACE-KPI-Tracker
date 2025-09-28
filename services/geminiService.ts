@@ -1,11 +1,30 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
 
-if (!process.env.API_KEY) {
-    console.warn("API_KEY environment variable not set. Gemini API calls will fail.");
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
+
+export const isGeminiConfigured = Boolean(
+    apiKey &&
+    apiKey !== "YOUR_GEMINI_API_KEY"
+);
+
+if (!isGeminiConfigured) {
+    console.warn("Gemini API key is not configured. Please set VITE_GEMINI_API_KEY in your .env.local file.");
 }
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
+let aiClient: GoogleGenAI | null = null;
+
+const getClient = () => {
+    if (!isGeminiConfigured || !apiKey) {
+        throw new Error("Gemini API key is not configured. Please add VITE_GEMINI_API_KEY to your .env.local file.");
+    }
+
+    if (!aiClient) {
+        aiClient = new GoogleGenAI({ apiKey });
+    }
+
+    return aiClient;
+};
 
 const complanSchema = {
     type: Type.OBJECT,
@@ -28,8 +47,9 @@ const complanSchema = {
 };
 
 export const generateComplan = async (inputs: any): Promise<any> => {
+    const ai = getClient();
     const prompt = `
-        You are an expert military Public Affairs Officer (PAO) specializing in the U.S. Army Corps of Engineers (USACE) strategic communication planning process. 
+        You are an expert military Public Affairs Officer (PAO) specializing in the U.S. Army Corps of Engineers (USACE) strategic communication planning process.
         Your task is to generate a comprehensive 10-step communication plan (COMPLAN) based on the provided inputs. The output must be a well-structured JSON object.
 
         The 10 steps are:
