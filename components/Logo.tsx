@@ -1,19 +1,62 @@
 import React from 'react';
 
-// The base64 string for the USACE logo
-const LOGO_BASE64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOEAAADhCAMAAAAJbSJIAAAASFBMVEX////zgDPzgDDzeDHzeC/zeC7zeDDzeTH0hTX0hDTzeTDzfjTzfjP0gTP0hC3zfjH0gy3zfix2q0N/tE+fw5qPvlWqzH/zeC/0nF7JAAAAA3RSTlMA2b8L3so/AAACvUlEQVR4nO3c63KCMBSF4UApYyAI6///7SYm2U0E4Kggd7s6j9015+w9A0gAAAAAAAAAAAAAAAAAAAAAAAD/G2Zk7+lH2yB5vP9a7P4S3+PZ9Bq9r0J5593j/vB9G8+3/XzQj3m8fpf1E5+vU3+9S+e58PzsN/sU/TjP37dheH78T/sM+zT+6x2Y+V97Wf8d5jO/Jj6Nq1j/tfev9uE/1H57j/5f/8/v63z5v3u/XlP/4L5/v95n8D3s/dmf6g97b+0+x/c9D/f9A5+d2/f8A5+f5vL/n6fT8v/8D+7u/x7v/8v98t/f7/3eH78/+/w/O9/fnz/8/p+n5/b9/+A87P5/v/A8/P9fT9ff7/fBwBAAIAgAEAQACAIABAEAAgCAKQBACAIABAEAAgCAIQAACEAQAACEAQAACEAQAiAEAQACAIAhAEAIQBACIAgAEIQAACEAQAiAIAhAEAIgBAEAQgCEIQCACEAQAiAIABCEAACEIQCACEAQAiAIAhAEAQgCEIQAACEAQAiAIAhAEAQgCEIQBACIAgCEIQAACEAQAiAIAhAEAQgCEIQBACEAQAiAIABCEIQCACEAQAiAIAhAEAQgCEIQAACEAQAiAIAhAEAQgCEIQAACEAQBCAIABC+w/P5/5/l/u7/3h/v/94fr//O8v5/n+P7v8/39/vD96/3/b/eD/f795+P6f/f797P3Zn+tPe792X/7T/5P/n+f7/cZz6/+7v+x+2v+1/u/Pqf9wX79/3GfwPf3ev2f/Xw/v89n/v8Mv36/b/eH7+P3bT+eZ+8H3zz4Nf4vP/x+/L4Nv5+nb+f/d36M83j+vP/u/f+8P37fx/T/eP+0Xn3+D6M5+vB/2iB5PP9y3n+D7s/hPf4dD+NXtfBPgAAAAAAAAAAAAAAAAAAAAAAAADA9/0DN+t7eTzK2B8AAAAASUVORK5CYII=";
-
 interface LogoProps {
     className?: string;
 }
 
 const Logo: React.FC<LogoProps> = ({ className }) => {
     return (
-        <img 
-            src={LOGO_BASE64} 
-            alt="USACE Logo" 
-            className={className} 
-        />
+        <svg
+            viewBox="0 0 512 384"
+            xmlns="http://www.w3.org/2000/svg"
+            role="img"
+            aria-label="USACE Castle logo"
+            className={className}
+        >
+            <rect width="512" height="384" rx="48" fill="#d71920" />
+            <rect
+                x="36"
+                y="36"
+                width="440"
+                height="312"
+                rx="24"
+                fill="none"
+                stroke="#ffffff"
+                strokeWidth="28"
+            />
+            <g fill="#ffffff">
+                <rect x="96" y="152" width="72" height="160" />
+                <rect x="96" y="112" width="16" height="40" />
+                <rect x="124" y="112" width="16" height="40" />
+                <rect x="152" y="112" width="16" height="40" />
+
+                <rect x="344" y="152" width="72" height="160" />
+                <rect x="344" y="112" width="16" height="40" />
+                <rect x="372" y="112" width="16" height="40" />
+                <rect x="400" y="112" width="16" height="40" />
+
+                <rect x="168" y="176" width="176" height="32" />
+                <rect x="168" y="184" width="32" height="128" />
+                <rect x="312" y="184" width="32" height="128" />
+
+                <rect x="200" y="176" width="112" height="136" />
+                <rect x="200" y="136" width="16" height="48" />
+                <rect x="232" y="136" width="16" height="48" />
+                <rect x="264" y="136" width="16" height="48" />
+                <rect x="296" y="136" width="16" height="48" />
+
+                <rect x="232" y="96" width="16" height="40" />
+                <rect x="264" y="96" width="16" height="40" />
+                <rect x="296" y="96" width="16" height="40" />
+            </g>
+            <g fill="#d71920">
+                <rect x="116" y="200" width="32" height="64" />
+                <rect x="364" y="200" width="32" height="64" />
+                <rect x="184" y="224" width="24" height="64" />
+                <rect x="304" y="224" width="24" height="64" />
+                <path d="M236 312V248a40 40 0 0 1 80 0v64z" />
+            </g>
+        </svg>
     );
 };
 
