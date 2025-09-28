@@ -1,7 +1,7 @@
 import React from 'react';
 
-// The base64 string for the USACE logo
-const LOGO_BASE64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOEAAADhCAMAAAAJbSJIAAAASFBMVEX////zgDPzgDDzeDHzeC/zeC7zeDDzeTH0hTX0hDTzeTDzfjTzfjP0gTP0hC3zfjH0gy3zfix2q0N/tE+fw5qPvlWqzH/zeC/0nF7JAAAAA3RSTlMA2b8L3so/AAACvUlEQVR4nO3c63KCMBSF4UApYyAI6///7SYm2U0E4Kggd7s6j9015+w9A0gAAAAAAAAAAAAAAAAAAAAAAAD/G2Zk7+lH2yB5vP9a7P4S3+PZ9Bq9r0J5593j/vB9G8+3/XzQj3m8fpf1E5+vU3+9S+e58PzsN/sU/TjP37dheH78T/sM+zT+6x2Y+V97Wf8d5jO/Jj6Nq1j/tfev9uE/1H57j/5f/8/v63z5v3u/XlP/4L5/v95n8D3s/dmf6g97b+0+x/c9D/f9A5+d2/f8A5+f5vL/n6fT8v/8D+7u/x7v/8v98t/f7/3eH78/+/w/O9/fnz/8/p+n5/b9/+A87P5/v/A8/P9fT9ff7/fBwBAAIAgAEAQACAIABAEAAgCAKQBACAIABAEAAgCAIQAACEAQAACEAQAACEAQAiAEAQACAIAhAEAIQBACIAgAEIQAACEAQAiAIAhAEAIgBAEAQgCEIQCACEAQAiAIABCEAACEIQCACEAQAiAIAhAEAQgCEIQAACEAQAiAIAhAEAQgCEIQBACIAgCEIQAACEAQAiAIAhAEAQgCEIQBACEAQAiAIABCEIQCACEAQAiAIAhAEAQgCEIQAACEAQAiAIAhAEAQgCEIQAACEAQBCAIABC+w/P5/5/l/u7/3h/v/94fr//O8v5/n+P7v8/39/vD96/3/b/eD/f795+P6f/f797P3Zn+tPe792X/7T/5P/n+f7/cZz6/+7v+x+2v+1/u/Pqf9wX79/3GfwPf3ev2f/Xw/v89n/v8Mv36/b/eH7+P3bT+eZ+8H3zz4Nf4vP/x+/L4Nv5+nb+f/d36M83j+vP/u/f+8P37fx/T/eP+0Xn3+D6M5+vB/2iB5PP9y3n+D7s/hPf4dD+NXtfBPgAAAAAAAAAAAAAAAAAAAAAAAADA9/0DN+t7eTzK2B8AAAAASUVORK5CYII=";
+// Publicly hosted USACE logo used across the application
+const LOGO_URL = 'https://upload.wikimedia.org/wikipedia/commons/d/d3/United_States_Army_Corps_of_Engineers_logo.svg';
 
 interface LogoProps {
     className?: string;
@@ -9,10 +9,10 @@ interface LogoProps {
 
 const Logo: React.FC<LogoProps> = ({ className }) => {
     return (
-        <img 
-            src={LOGO_BASE64} 
-            alt="USACE Logo" 
-            className={className} 
+        <img
+            src={LOGO_URL}
+            alt="USACE Logo"
+            className={className}
         />
     );
 };
