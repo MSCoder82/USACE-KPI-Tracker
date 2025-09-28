@@ -95,23 +95,24 @@ const App: React.FC = () => {
         );
     }
 
-    if (!isSupabaseConfigured) {
-        return (
-            <div className="flex min-h-screen flex-col items-center justify-center bg-usace-bg p-6 text-center text-white">
-                <h1 className="mb-4 text-2xl font-semibold">Supabase configuration missing</h1>
-                <p className="max-w-lg text-gray-300">
-                    To use the USACE PAO KPI Tracker you need to create a <code>.env.local</code> file in the project root and
-                    provide the <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code> values from your Supabase project.
-                </p>
-                <p className="mt-4 max-w-lg text-gray-400">
-                    After saving the file, restart the development server and reload this page.
-                </p>
-            </div>
-        );
-    }
-
     if (!session || !user) {
-        return <AuthScreen />;
+        return (
+            <AuthScreen
+                disabled={!isSupabaseConfigured}
+                notice={!isSupabaseConfigured ? (
+                    <>
+                        <p className="font-semibold">Supabase configuration missing</p>
+                        <p className="mt-1 text-xs text-gray-300">
+                            Create a <code>.env.local</code> file in the project root with <code>VITE_SUPABASE_URL</code> and
+                            <code>VITE_SUPABASE_ANON_KEY</code> to enable authentication.
+                        </p>
+                        <p className="mt-2 text-xs text-gray-400">
+                            After saving the file, restart the development server and reload this page.
+                        </p>
+                    </>
+                ) : undefined}
+            />
+        );
     }
 
     return (
