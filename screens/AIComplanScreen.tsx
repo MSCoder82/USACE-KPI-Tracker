@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import Card from '../components/Card';
 import Button from '../components/Button';
-import { generateComplan } from '../services/geminiService';
+import { generateComplan, isGeminiConfigured } from '../services/geminiService';
 import type { ComplanSection, Campaign } from '../types';
 import { supabase } from '../lib/supabaseClient';
 import { useUser } from '../App';
@@ -76,10 +76,18 @@ const AIComplanScreen: React.FC = () => {
         setInputs(prev => ({ ...prev, [name]: value }));
     };
 
+    const canGenerate = isGeminiConfigured;
+
     const handleGenerate = useCallback(async () => {
-        setIsLoading(true);
         setError(null);
         setPlan(null);
+
+        if (!canGenerate) {
+            setError('Gemini integration is not configured. Add VITE_GEMINI_API_KEY to your .env.local file to enable this feature.');
+            return;
+        }
+
+        setIsLoading(true);
 
         const formattedInputs = {
             campaignName: campaigns.find(c => c.id === inputs.campaignId)?.name || 'N/A',
@@ -112,11 +120,21 @@ const AIComplanScreen: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [inputs, campaigns]);
+    }, [inputs, campaigns, canGenerate]);
 
     return (
         <div className="space-y-6">
             <h1 className="text-3xl font-bold text-white">AI COMPLAN Generator</h1>
+
+            {!canGenerate && (
+                <div className="rounded-md border border-yellow-500/40 bg-yellow-500/10 p-4 text-sm text-yellow-200">
+                    <p className="font-semibold">Gemini configuration required</p>
+                    <p className="mt-1 text-yellow-100/80">
+                        To generate AI-assisted plans, create a <code className="font-mono">.env.local</code> file and set
+                        <code className="mx-1 font-mono">VITE_GEMINI_API_KEY</code> with your Google Gemini API key, then restart the development server.
+                    </p>
+                </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Card title="Plan Inputs">
@@ -154,8 +172,14 @@ const AIComplanScreen: React.FC = () => {
                                 </div>
                             </div>
                         </div>
-                        <Button onClick={handleGenerate} disabled={isLoading} Icon={isLoading ? Loader : Bot} className="w-full" type="button">
-                            {isLoading ? 'Generating...' : 'Generate Draft'}
+                        <Button
+                            onClick={handleGenerate}
+                            disabled={isLoading || !canGenerate}
+                            Icon={isLoading ? Loader : Bot}
+                            className="w-full"
+                            type="button"
+                        >
+                            {isLoading ? 'Generating...' : canGenerate ? 'Generate Draft' : 'Configure Gemini to enable'}
                         </Button>
                     </form>
                 </Card>
