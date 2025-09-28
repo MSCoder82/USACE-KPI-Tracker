@@ -226,6 +226,7 @@ const App: React.FC = () => {
             <AuthScreen
                 disabled={!isSupabaseConfigured && !forceAuthPreview}
                 notices={notices}
+                supabaseConnected={isSupabaseConfigured && !supabaseInitError}
             />
         );
     }
