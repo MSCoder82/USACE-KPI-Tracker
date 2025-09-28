@@ -84,6 +84,14 @@ const App: React.FC = () => {
     }, []);
 
     useEffect(() => {
+        if (forceAuthPreview) {
+            setSession(null);
+            setUser(null);
+            setAuthError(null);
+            setLoading(false);
+            return;
+        }
+
         if (!isSupabaseConfigured) {
             setLoading(false);
             return;
@@ -145,7 +153,7 @@ const App: React.FC = () => {
         return () => {
             subscription.unsubscribe();
         };
-    }, []);
+    }, [forceAuthPreview]);
 
     const handleLogout = async () => {
         if (!isSupabaseConfigured) {
