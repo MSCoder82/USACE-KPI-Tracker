@@ -8,7 +8,7 @@ const Logo: React.FC<LogoProps> = ({ className }) => {
     return (
         <svg
             viewBox="0 0 512 384"
-            xmlns="http://www.w3.org/2000/svg"
+            xmlns="https://commons.wikimedia.org/wiki/File:US-ArmyCorpsOfEngineers-Logo.svg#/media/File:United_States_Army_Corps_of_Engineers_logo.svg"
             role="img"
             aria-label="USACE Castle logo"
             className={className}
