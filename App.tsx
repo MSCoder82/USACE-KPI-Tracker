@@ -38,6 +38,63 @@ export const useUser = () => {
     return { user, hasPermission, logout, updateUser };
 };
 
+const normalizeUserRole = (value: unknown): UserRole => {
+    if (typeof value !== 'string') {
+        return UserRole.STAFF;
+    }
+    const normalized = value.toLowerCase();
+    if (normalized === UserRole.ADMIN) return UserRole.ADMIN;
+    if (normalized === UserRole.CHIEF) return UserRole.CHIEF;
+    if (normalized === UserRole.STAFF) return UserRole.STAFF;
+    return UserRole.STAFF;
+};
+
+const buildFallbackUserFromSession = (activeSession: Session): User => {
+    const metadata = (activeSession.user.user_metadata ?? {}) as Record<string, unknown>;
+    const rawFullName = metadata['full_name'];
+    const fallbackEmail = activeSession.user.email ?? `${activeSession.user.id}@unknown.local`;
+    const fallbackFullName =
+        typeof rawFullName === 'string' && rawFullName.trim().length > 0
+            ? rawFullName.trim()
+            : fallbackEmail.split('@')[0] || 'New User';
+    const fallbackRole = normalizeUserRole(metadata['role']);
+    const rawTeamId = metadata['team_id'];
+    const fallbackTeamId = typeof rawTeamId === 'string' && rawTeamId.trim().length > 0 ? rawTeamId : null;
+    const rawAvatar = metadata['avatar_url'];
+    const fallbackAvatar =
+        typeof rawAvatar === 'string' && rawAvatar.trim().length > 0
+            ? rawAvatar
+            : `https://picsum.photos/seed/${activeSession.user.id}/200`;
+
+    return {
+        id: activeSession.user.id,
+        email: fallbackEmail,
+        full_name: fallbackFullName,
+        role: fallbackRole,
+        team_id: fallbackTeamId,
+        profile_photo_url: fallbackAvatar,
+        teams: null,
+    };
+};
+
+interface ResolvedUserResult {
+    user: User;
+    usedFallback: boolean;
+    error?: unknown;
+}
+
+const resolveUserFromSession = async (activeSession: Session): Promise<ResolvedUserResult> => {
+    try {
+        const profile = await getProfile(activeSession.user.id, activeSession.user.email ?? '');
+        if (profile) {
+            return { user: profile, usedFallback: false };
+        }
+        return { user: buildFallbackUserFromSession(activeSession), usedFallback: true };
+    } catch (error) {
+        return { user: buildFallbackUserFromSession(activeSession), usedFallback: true, error };
+    }
+};
+
 const App: React.FC = () => {
     const [session, setSession] = useState<Session | null>(null);
     const [user, setUser] = useState<User | null>(null);
@@ -110,14 +167,15 @@ const App: React.FC = () => {
                 setSession(session);
 
                 if (session) {
-                    try {
-                        const profile = await getProfile(session.user.id, session.user.email!);
-                        setUser(profile);
-                    } catch (profileError) {
+                    const { user: resolvedUser, usedFallback, error: profileError } = await resolveUserFromSession(session);
+                    if (profileError) {
                         console.error('Error loading profile:', profileError);
-                        setUser(null);
-                        setAuthError('We were unable to load your profile. Please try again.');
                     }
+                    if (usedFallback) {
+                        console.warn('No profile record found for the signed-in user. Using session metadata as a temporary profile.');
+                    }
+                    setUser(resolvedUser);
+                    setAuthError(null);
                 } else {
                     setUser(null);
                 }
@@ -137,13 +195,19 @@ const App: React.FC = () => {
             setSession(session);
             if (session) {
                 try {
-                    const profile = await getProfile(session.user.id, session.user.email!);
-                    setUser(profile);
+                    const { user: resolvedUser, usedFallback, error: profileError } = await resolveUserFromSession(session);
+                    if (profileError) {
+                        console.error('Error loading profile after auth state change:', profileError);
+                    }
+                    if (usedFallback) {
+                        console.warn('No profile record found for the signed-in user. Using session metadata as a temporary profile.');
+                    }
+                    setUser(resolvedUser);
                     setAuthError(null);
-                } catch (profileError) {
-                    console.error('Error loading profile after auth state change:', profileError);
-                    setUser(null);
-                    setAuthError('We were unable to load your profile. Please try again.');
+                } catch (error) {
+                    console.error('Error loading profile after auth state change:', error);
+                    setUser(buildFallbackUserFromSession(session));
+                    setAuthError(null);
                 }
             } else {
                 setUser(null);

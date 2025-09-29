@@ -45,7 +45,10 @@ const DashboardScreen: React.FC = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (!user?.team_id) return;
+        if (!user?.team_id) {
+            setCampaignsForFilter([]);
+            return;
+        }
         const fetchCampaigns = async () => {
             const { data } = await supabase
                 .from('campaigns')
@@ -58,7 +61,14 @@ const DashboardScreen: React.FC = () => {
     }, [user]);
 
     const fetchDashboardData = useCallback(async () => {
-        if (!user?.team_id) return;
+        if (!user?.team_id) {
+            setRecentInputs([]);
+            setRecentTasks([]);
+            setCategoryCounts([]);
+            setGoalProgress([]);
+            setLoading(false);
+            return;
+        }
         setLoading(true);
 
         // Fetch Goal Progress
@@ -143,6 +153,18 @@ const DashboardScreen: React.FC = () => {
     useEffect(() => {
         fetchDashboardData();
     }, [fetchDashboardData]);
+
+    if (!user?.team_id) {
+        return (
+            <div className="space-y-6">
+                <Card title="Connect To A Team">
+                    <p className="text-sm text-gray-300">
+                        We couldn't find a team for your account yet, so the dashboard has nothing to show. Ask an administrator to assign you to a team or update your profile once a team is available.
+                    </p>
+                </Card>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">

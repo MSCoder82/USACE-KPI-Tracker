@@ -60,7 +60,7 @@ export const getProfile = async (userId: string, userEmail: string): Promise<Use
         .from('profiles')
         .select('*, teams(id, name)')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
     if (error) {
         console.error('Error fetching profile:', error.message);
@@ -69,26 +69,26 @@ export const getProfile = async (userId: string, userEmail: string): Promise<Use
         return null;
     }
 
-    if (data) {
-        // Construct the full URL for the profile photo
-        let photoUrl = `https://picsum.photos/seed/${data.id}/200`; // default placeholder
-        if (data.profile_photo_url) {
-            const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(data.profile_photo_url);
-            photoUrl = publicUrl;
-        }
-
-        return {
-            id: data.id,
-            email: userEmail,
-            full_name: data.full_name,
-            role: data.role as UserRole,
-            team_id: data.team_id,
-            teams: data.teams as { id: string, name: string } | null,
-            profile_photo_url: photoUrl,
-        };
+    if (!data) {
+        return null;
     }
 
-    return null;
+    // Construct the full URL for the profile photo
+    let photoUrl = `https://picsum.photos/seed/${data.id}/200`; // default placeholder
+    if (data.profile_photo_url) {
+        const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(data.profile_photo_url);
+        photoUrl = publicUrl;
+    }
+
+    return {
+        id: data.id,
+        email: userEmail,
+        full_name: data.full_name,
+        role: data.role as UserRole,
+        team_id: data.team_id,
+        teams: data.teams as { id: string, name: string } | null,
+        profile_photo_url: photoUrl,
+    };
 };
 
 /**
