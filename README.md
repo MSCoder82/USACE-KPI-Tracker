@@ -20,7 +20,7 @@ View your app in AI Studio: https://ai.studio/apps/drive/1jdC6VV5wE5Xbjqsm1l5FP2
    ```bash
    GEMINI_API_KEY="<your Gemini API key>"
    VITE_SUPABASE_URL="<your Supabase project URL>"
-   VITE_SUPABASE_ANON_KEY="<your Supabase anon key>"
+   VITE_SUPABASE_ANON_KEY="<your Supabase anon key>" # or VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY
    ```
 
    > **Note:** Vite only exposes environment variables prefixed with `VITE_`. Without these variables the authentication client cannot initialize and the sign-in screen will not render.
@@ -33,7 +33,7 @@ View your app in AI Studio: https://ai.studio/apps/drive/1jdC6VV5wE5Xbjqsm1l5FP2
 
    * Keeping the anon key in `.env.local` (or setting it as an environment variable in your hosting provider's dashboard) does **not** leak elevated privileges.
    * Secrets that must remain private&mdash;such as the service-role key or third-party API tokens&mdash;should be stored with `supabase secrets set ...` and accessed from [Edge Functions](https://supabase.com/docs/guides/functions) or other server-side code. These secrets are **not** available to the browser bundle.
-   * When deploying, configure `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in your hosting platform's environment-variable settings instead of committing them to version control. Vite injects the values at build time so they never need to appear in your source files.
+   * When deploying, configure `VITE_SUPABASE_URL` and either `VITE_SUPABASE_ANON_KEY` or `VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY` in your hosting platform's environment-variable settings instead of committing them to version control. Vite injects the values at build time so they never need to appear in your source files.
 
    In short, you still create the `.env.local` file for local development, but you rely on your deployment platform's environment-variable management for production builds while sensitive credentials remain in Supabase's managed secrets.
 

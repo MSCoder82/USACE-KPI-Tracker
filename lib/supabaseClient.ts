@@ -9,29 +9,34 @@ import { UserRole } from '../types';
 //
 // VITE_SUPABASE_URL="YOUR_SUPABASE_URL"
 // VITE_SUPABASE_ANON_KEY="YOUR_SUPABASE_ANON_KEY"
+// or the newer naming:
+// VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY="YOUR_SUPABASE_ANON_KEY"
 // =================================================================================
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+const supabasePublishableKey = import.meta.env
+    .VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY as string | undefined;
+const supabasePublicKey = supabaseAnonKey ?? supabasePublishableKey;
 
 let supabaseInitializationError: string | null = null;
 let supabaseClient: ReturnType<typeof createClient> | null = null;
 
 const hasSupabaseCredentials = Boolean(
     supabaseUrl &&
-    supabaseAnonKey &&
+    supabasePublicKey &&
     supabaseUrl !== 'YOUR_SUPABASE_URL'
 );
 
 if (hasSupabaseCredentials) {
     try {
-        supabaseClient = createClient(supabaseUrl!, supabaseAnonKey!);
+        supabaseClient = createClient(supabaseUrl!, supabasePublicKey!);
     } catch (error) {
         supabaseInitializationError = error instanceof Error ? error.message : String(error);
         console.error('Failed to initialize Supabase client:', supabaseInitializationError);
     }
 } else {
     console.error(
-        'Supabase client is not configured. Please create a .env.local file and add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.'
+        'Supabase client is not configured. Please create a .env.local file and add VITE_SUPABASE_URL along with either VITE_SUPABASE_ANON_KEY or VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY.'
     );
 }
 

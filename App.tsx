@@ -262,7 +262,8 @@ const App: React.FC = () => {
                         <p className="font-semibold">Supabase configuration missing</p>
                         <p className="mt-1 text-xs text-gray-300">
                             Create a <code>.env.local</code> file in the project root with <code>VITE_SUPABASE_URL</code> and
-                            <code>VITE_SUPABASE_ANON_KEY</code> to enable authentication.
+                            either <code>VITE_SUPABASE_ANON_KEY</code> or <code>VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY</code> to
+                            enable authentication.
                         </p>
                         <p className="mt-2 text-xs text-gray-400">
                             After saving the file, restart the development server and reload this page.
