@@ -65,31 +65,47 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ disabled = false, notices, supa
         setError(null);
         setMessage(null);
 
-        if (isSignIn) {
-            const { error } = await supabase.auth.signInWithPassword({ email, password });
-            if (error) setError(error.message);
-        } else {
-            const { data, error } = await supabase.auth.signUp({
-                email,
-                password,
-                options: {
-                    data: {
-                        full_name: fullName,
-                        // You can add default role or team here if needed
-                        // role: 'staff', 
-                        // team_name: 'Default Team',
-                    }
+        try {
+            if (isSignIn) {
+                const { error } = await supabase.auth.signInWithPassword({ email, password });
+                if (error) {
+                    const message = error.message === 'Failed to fetch'
+                        ? 'Unable to reach Supabase. Please confirm your Supabase credentials and network connection.'
+                        : error.message;
+                    setError(message);
                 }
-            });
-            if (error) {
-                setError(error.message);
-            } else if (data.user?.identities?.length === 0) {
-                 setError("This user already exists. Please try signing in.");
             } else {
-                setMessage("Success! Please check your email for a verification link.");
+                const { data, error } = await supabase.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: {
+                            full_name: fullName,
+                            // You can add default role or team here if needed
+                            // role: 'staff',
+                            // team_name: 'Default Team',
+                        }
+                    }
+                });
+                if (error) {
+                    const message = error.message === 'Failed to fetch'
+                        ? 'Unable to reach Supabase. Please confirm your Supabase credentials and network connection.'
+                        : error.message;
+                    setError(message);
+                } else if (data.user?.identities?.length === 0) {
+                    setError("This user already exists. Please try signing in.");
+                } else {
+                    setMessage("Success! Please check your email for a verification link.");
+                }
             }
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'An unexpected error occurred while contacting Supabase.';
+            setError(message === 'Failed to fetch'
+                ? 'Unable to reach Supabase. Please confirm your Supabase credentials and network connection.'
+                : message);
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     };
     
     return (
