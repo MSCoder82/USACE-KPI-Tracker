@@ -6,14 +6,14 @@ import { UserRole } from '../types';
 // The client now reads from environment variables.
 // In your project settings, you MUST add your Supabase credentials.
 //
-// SUPABASE_URL="YOUR_SUPABASE_URL"
-// SUPABASE_ANON_KEY="YOUR_SUPABASE_ANON_KEY"
+// REACT_APP_SUPABASE_URL="YOUR_SUPABASE_URL"
+// REACT_APP_SUPABASE_ANON_KEY="YOUR_SUPABASE_ANON_KEY"
 // =================================================================================
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
 
 
-if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === 'YOUR_SUPABASE_URL') {
+if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('YOUR_SUPABASE_URL')) {
     const errorDiv = document.createElement('div');
     errorDiv.style.position = 'fixed';
     errorDiv.style.top = '10px';
@@ -24,7 +24,7 @@ if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === 'YOUR_SUPABASE_URL') {
     errorDiv.style.zIndex = '1000';
     errorDiv.style.fontSize = '14px';
     errorDiv.style.borderRadius = '5px';
-    errorDiv.innerHTML = '<b>CRITICAL ERROR:</b> Supabase client is not configured. Please ensure <code>SUPABASE_URL</code> and <code>SUPABASE_ANON_KEY</code> are set in your environment variables.';
+    errorDiv.innerHTML = '<b>CRITICAL ERROR:</b> Supabase client is not configured. Please ensure <code>REACT_APP_SUPABASE_URL</code> and <code>REACT_APP_SUPABASE_ANON_KEY</code> are set in your environment variables.';
     document.body.prepend(errorDiv);
     
     // Throw an error to stop execution
