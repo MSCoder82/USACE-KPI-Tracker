@@ -11,11 +11,11 @@ import { UserRole } from '../types';
 // VITE_SUPABASE_ANON_KEY="YOUR_SUPABASE_ANON_KEY"
 // or the newer naming:
 // VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY="YOUR_SUPABASE_ANON_KEY"
-// =================================================================================
+// ================================================================================== 
 const rawSupabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 const supabasePublishableKey = import.meta.env
-    .VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY as string | undefined;
+ .VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY as string | undefined;
 const supabasePublicKey = supabaseAnonKey ?? supabasePublishableKey;
 
 let supabaseInitializationError: string | null = null;
@@ -102,7 +102,7 @@ export const getProfile = async (userId: string, userEmail: string): Promise<Use
     // Construct the full URL for the profile photo
     let photoUrl = `https://picsum.photos/seed/${data.id}/200`; // default placeholder
     if (data.profile_photo_url) {
-        const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(data.profile_photo_url);
+        const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(data.profile_photo_url as string);
         photoUrl = publicUrl;
     }
 
