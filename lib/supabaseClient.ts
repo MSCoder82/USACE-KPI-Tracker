@@ -1,37 +1,85 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { User } from '../types';
 import { UserRole } from '../types';
 
-// =================================================================================
-// The client now reads from environment variables.
-// In your project settings, you MUST add your Supabase credentials.
-//
-// REACT_APP_SUPABASE_URL="YOUR_SUPABASE_URL"
-// REACT_APP_SUPABASE_ANON_KEY="YOUR_SUPABASE_ANON_KEY"
-// =================================================================================
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
-const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
+type EnvRecord = Record<string, string | undefined>;
 
+const env = (import.meta.env ?? {}) as EnvRecord;
 
-if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('YOUR_SUPABASE_URL')) {
-    const errorDiv = document.createElement('div');
-    errorDiv.style.position = 'fixed';
-    errorDiv.style.top = '10px';
-    errorDiv.style.left = '10px';
-    errorDiv.style.padding = '10px';
-    errorDiv.style.background = 'red';
-    errorDiv.style.color = 'white';
-    errorDiv.style.zIndex = '1000';
-    errorDiv.style.fontSize = '14px';
-    errorDiv.style.borderRadius = '5px';
-    errorDiv.innerHTML = '<b>CRITICAL ERROR:</b> Supabase client is not configured. Please ensure <code>REACT_APP_SUPABASE_URL</code> and <code>REACT_APP_SUPABASE_ANON_KEY</code> are set in your environment variables.';
-    document.body.prepend(errorDiv);
-    
-    // Throw an error to stop execution
-    throw new Error("Supabase credentials are not configured in environment variables.");
+const resolveConfig = () => {
+    const rawUrl = env.VITE_SUPABASE_URL?.trim();
+    const rawAnonKey = env.VITE_SUPABASE_ANON_KEY?.trim();
+    const rawPublishableKey = env.VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY?.trim();
+
+    if (!rawUrl || rawUrl.length === 0 || rawUrl.includes('YOUR_SUPABASE_URL')) {
+        return {
+            error: 'Supabase URL is not configured. Set VITE_SUPABASE_URL in your environment variables.',
+        } as const;
+    }
+
+    const supabaseKey = rawAnonKey || rawPublishableKey;
+    if (!supabaseKey) {
+        return {
+            error: 'Supabase key is not configured. Provide VITE_SUPABASE_ANON_KEY or VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY.',
+        } as const;
+    }
+
+    try {
+        const parsedUrl = new URL(rawUrl);
+        return {
+            url: parsedUrl.toString(),
+            key: supabaseKey,
+            hostname: parsedUrl.hostname,
+        } as const;
+    } catch (error) {
+        return {
+            error: `Supabase URL is invalid. ${error instanceof Error ? error.message : 'Please provide a valid URL.'}`,
+        } as const;
+    }
+};
+
+const { url: resolvedUrl, key: resolvedKey, hostname: resolvedHostname, error: configError } = resolveConfig();
+
+const createUnconfiguredClientProxy = (message: string): SupabaseClient => {
+    const handler: ProxyHandler<object> = {
+        get() {
+            throw new Error(message);
+        },
+        apply() {
+            throw new Error(message);
+        },
+    };
+
+    return new Proxy({}, handler) as SupabaseClient;
+};
+
+let internalSupabase: SupabaseClient;
+let supabaseInitError: string | null = null;
+
+if (resolvedUrl && resolvedKey) {
+    try {
+        internalSupabase = createClient(resolvedUrl, resolvedKey);
+    } catch (error) {
+        const message = `Failed to initialise Supabase client. ${error instanceof Error ? error.message : 'Unknown error.'}`;
+        supabaseInitError = message;
+        internalSupabase = createUnconfiguredClientProxy(message);
+    }
+} else {
+    const message = configError ?? 'Supabase configuration is incomplete.';
+    supabaseInitError = message;
+    internalSupabase = createUnconfiguredClientProxy(message);
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = internalSupabase;
+export const isSupabaseConfigured = supabaseInitError === null;
+export const supabaseProjectHostname = resolvedHostname ?? null;
+export { supabaseInitError };
+
+const ensureSupabaseConfigured = () => {
+    if (!isSupabaseConfigured) {
+        throw new Error(supabaseInitError ?? 'Supabase client is not configured.');
+    }
+};
 
 /**
  * Fetches the public profile for a given user ID.
@@ -40,6 +88,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
  * @returns A User object or null if not found or on error.
  */
 export const getProfile = async (userId: string, userEmail: string): Promise<User | null> => {
+    ensureSupabaseConfigured();
+
     const { data, error } = await supabase
         .from('profiles')
         .select('*, teams(id, name)')
@@ -82,6 +132,8 @@ export const getProfile = async (userId: string, userEmail: string): Promise<Use
  * @returns The path of the uploaded file.
  */
 export const uploadAvatar = async (userId: string, file: File) => {
+    ensureSupabaseConfigured();
+
     const fileExt = file.name.split('.').pop();
     const filePath = `${userId}-${Date.now()}.${fileExt}`;
 
@@ -102,6 +154,8 @@ export const uploadAvatar = async (userId: string, file: File) => {
  * @param photoPath The path of the photo in the storage bucket.
  */
 export const updateUserProfilePhoto = async (userId: string, photoPath: string) => {
+    ensureSupabaseConfigured();
+
     const { error } = await supabase
         .from('profiles')
         .update({ profile_photo_url: photoPath })
