@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Button from '../components/Button';
 import { LogIn, Loader } from 'lucide-react';
-import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
+import { supabase, isSupabaseConfigured, supabaseProjectHostname } from '../lib/supabaseClient';
 
 interface AuthInputProps {
     id: string;
@@ -91,8 +91,29 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ disabled = false, notices, supa
                 }
             }
         } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : String(err);
-            setError(errorMessage || 'An unexpected error occurred. Please try again.');
+            console.error('Authentication request failed:', err);
+            let errorMessage = err instanceof Error ? err.message : String(err);
+
+            const normalizedMessage = typeof errorMessage === 'string' ? errorMessage.trim() : '';
+            const isNetworkFailure =
+                err instanceof TypeError ||
+                normalizedMessage === 'Failed to fetch' ||
+                normalizedMessage === 'NetworkError when attempting to fetch resource.';
+
+            if (isNetworkFailure) {
+                const hostname = supabaseProjectHostname ?? 'the Supabase endpoint';
+                errorMessage = [
+                    `We couldn't reach ${hostname}.`,
+                    'Please double-check VITE_SUPABASE_URL, ensure the project is online,',
+                    'and verify that your network allows access to Supabase.'
+                ].join(' ');
+            }
+
+            setError(
+                normalizedMessage && !isNetworkFailure
+                    ? normalizedMessage
+                    : errorMessage || 'An unexpected error occurred. Please try again.'
+            );
         } finally {
             setLoading(false);
         }

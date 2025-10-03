@@ -27,6 +27,8 @@ View your app in AI Studio: https://ai.studio/apps/drive/1jdC6VV5wE5Xbjqsm1l5FP2
 
    If you simply need to review the authentication UI without wiring up Supabase yet, append `?auth-preview=1` to the preview URL (or `/#/?auth-preview=1` when using hash routing). This toggles an interactive demo mode that keeps form submissions disabled until real Supabase credentials are configured.
 
+   > **Troubleshooting:** If the sign-in or sign-up forms report `Failed to fetch`, open your browser's network tab to confirm which host the request is targeting. Ensure `VITE_SUPABASE_URL` exactly matches your Supabase project's URL (for example, `https://<project-ref>.supabase.co`) or your local Supabase CLI URL (`http://127.0.0.1:54321`). DNS errors such as `ERR_NAME_NOT_RESOLVED` typically mean the hostname is misspelled or the project has been deleted.
+
    ### Why the Supabase URL & anon key live in `.env.local`
 
    Supabase's anon key is intentionally designed to be public. It is the same credential that ships in Supabase's own quick-start examples and it only grants the permissions defined in your project's `auth` policies. This means:

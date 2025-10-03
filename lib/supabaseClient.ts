@@ -12,7 +12,7 @@ import { UserRole } from '../types';
 // or the newer naming:
 // VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY="YOUR_SUPABASE_ANON_KEY"
 // =================================================================================
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+const rawSupabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 const supabasePublishableKey = import.meta.env
     .VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY as string | undefined;
@@ -20,11 +20,30 @@ const supabasePublicKey = supabaseAnonKey ?? supabasePublishableKey;
 
 let supabaseInitializationError: string | null = null;
 let supabaseClient: ReturnType<typeof createClient> | null = null;
+let supabaseUrl: string | null = null;
+let supabaseHostname: string | null = null;
+
+if (typeof rawSupabaseUrl === 'string') {
+    const candidateUrl = rawSupabaseUrl.trim();
+    if (candidateUrl && candidateUrl !== 'YOUR_SUPABASE_URL') {
+        try {
+            const parsedUrl = new URL(candidateUrl);
+            parsedUrl.hash = '';
+            const cleanedPathname = parsedUrl.pathname.replace(/\/+$/, '');
+            supabaseUrl = `${parsedUrl.origin}${cleanedPathname}`;
+            supabaseHostname = parsedUrl.hostname;
+        } catch (error) {
+            supabaseInitializationError =
+                'Invalid Supabase URL. Please ensure VITE_SUPABASE_URL is a fully-qualified URL such as https://your-project.supabase.co';
+            console.error('Failed to parse Supabase URL:', error);
+        }
+    }
+}
 
 const hasSupabaseCredentials = Boolean(
     supabaseUrl &&
     supabasePublicKey &&
-    supabaseUrl !== 'YOUR_SUPABASE_URL'
+    !supabaseInitializationError
 );
 
 if (hasSupabaseCredentials) {
@@ -34,7 +53,7 @@ if (hasSupabaseCredentials) {
         supabaseInitializationError = error instanceof Error ? error.message : String(error);
         console.error('Failed to initialize Supabase client:', supabaseInitializationError);
     }
-} else {
+} else if (!supabaseInitializationError) {
     console.error(
         'Supabase client is not configured. Please create a .env.local file and add VITE_SUPABASE_URL along with either VITE_SUPABASE_ANON_KEY or VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY.'
     );
@@ -42,6 +61,8 @@ if (hasSupabaseCredentials) {
 
 export const isSupabaseConfigured = Boolean(supabaseClient);
 export const supabaseInitError = supabaseInitializationError;
+export const supabaseProjectUrl = supabaseUrl;
+export const supabaseProjectHostname = supabaseHostname;
 
 const createUnconfiguredClient = () =>
     new Proxy({}, {

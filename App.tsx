@@ -2,7 +2,13 @@ import React, { useState, useEffect, createContext, useContext } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import type { User } from './types';
 import { UserRole } from './types';
-import { supabase, getProfile, isSupabaseConfigured, supabaseInitError } from './lib/supabaseClient';
+import {
+    supabase,
+    getProfile,
+    isSupabaseConfigured,
+    supabaseInitError,
+    supabaseProjectHostname,
+} from './lib/supabaseClient';
 import type { Session } from '@supabase/supabase-js';
 
 import Sidebar from './components/Sidebar';
@@ -102,6 +108,9 @@ const App: React.FC = () => {
     const [authError, setAuthError] = useState<string | null>(null);
     const [forceAuthPreview, setForceAuthPreview] = useState(false);
 
+    const supabaseEndpointLabel = supabaseProjectHostname ?? 'the authentication service';
+    const connectionErrorMessage = `We could not connect to ${supabaseEndpointLabel}. Please verify your Supabase configuration and try again.`;
+
     useEffect(() => {
         const resolveAuthPreviewFlag = () => {
             try {
@@ -159,7 +168,7 @@ const App: React.FC = () => {
                 const { data: { session }, error } = await supabase.auth.getSession();
                 if (error) {
                     console.error('Error fetching session:', error.message);
-                    setAuthError('We could not connect to the authentication service. Please refresh the page or try again later.');
+                    setAuthError(connectionErrorMessage);
                 } else {
                     setAuthError(null);
                 }
@@ -183,7 +192,7 @@ const App: React.FC = () => {
                 console.error('Unexpected error fetching session:', error);
                 setSession(null);
                 setUser(null);
-                setAuthError('We could not connect to the authentication service. Please refresh the page or try again later.');
+                setAuthError(connectionErrorMessage);
             } finally {
                 setLoading(false);
             }
