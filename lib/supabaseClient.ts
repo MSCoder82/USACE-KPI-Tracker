@@ -3,77 +3,35 @@ import type { User } from '../types';
 import { UserRole } from '../types';
 
 // =================================================================================
-// The client now reads from the .env.local file (Vite environment).
-// You MUST create a .env.local file in the root of your project
-// and add your Supabase credentials there using the Vite `VITE_` prefix.
+// The client now reads from environment variables.
+// In your project settings, you MUST add your Supabase credentials.
 //
-// VITE_SUPABASE_URL="YOUR_SUPABASE_URL"
-// VITE_SUPABASE_ANON_KEY="YOUR_SUPABASE_ANON_KEY"
-// or the newer naming:
-// VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY="YOUR_SUPABASE_ANON_KEY"
-// ================================================================================== 
-const rawSupabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
-const supabasePublishableKey = import.meta.env
- .VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY as string | undefined;
-const supabasePublicKey = supabaseAnonKey ?? supabasePublishableKey;
+// SUPABASE_URL="YOUR_SUPABASE_URL"
+// SUPABASE_ANON_KEY="YOUR_SUPABASE_ANON_KEY"
+// =================================================================================
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 
-let supabaseInitializationError: string | null = null;
-let supabaseClient: ReturnType<typeof createClient> | null = null;
-let supabaseUrl: string | null = null;
-let supabaseHostname: string | null = null;
 
-if (typeof rawSupabaseUrl === 'string') {
-    const candidateUrl = rawSupabaseUrl.trim();
-    if (candidateUrl && candidateUrl !== 'YOUR_SUPABASE_URL') {
-        try {
-            const parsedUrl = new URL(candidateUrl);
-            parsedUrl.hash = '';
-            const cleanedPathname = parsedUrl.pathname.replace(/\/+$/, '');
-            supabaseUrl = `${parsedUrl.origin}${cleanedPathname}`;
-            supabaseHostname = parsedUrl.hostname;
-        } catch (error) {
-            supabaseInitializationError =
-                'Invalid Supabase URL. Please ensure VITE_SUPABASE_URL is a fully-qualified URL such as https://your-project.supabase.co';
-            console.error('Failed to parse Supabase URL:', error);
-        }
-    }
+if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === 'YOUR_SUPABASE_URL') {
+    const errorDiv = document.createElement('div');
+    errorDiv.style.position = 'fixed';
+    errorDiv.style.top = '10px';
+    errorDiv.style.left = '10px';
+    errorDiv.style.padding = '10px';
+    errorDiv.style.background = 'red';
+    errorDiv.style.color = 'white';
+    errorDiv.style.zIndex = '1000';
+    errorDiv.style.fontSize = '14px';
+    errorDiv.style.borderRadius = '5px';
+    errorDiv.innerHTML = '<b>CRITICAL ERROR:</b> Supabase client is not configured. Please ensure <code>SUPABASE_URL</code> and <code>SUPABASE_ANON_KEY</code> are set in your environment variables.';
+    document.body.prepend(errorDiv);
+    
+    // Throw an error to stop execution
+    throw new Error("Supabase credentials are not configured in environment variables.");
 }
 
-const hasSupabaseCredentials = Boolean(
-    supabaseUrl &&
-    supabasePublicKey &&
-    !supabaseInitializationError
-);
-
-if (hasSupabaseCredentials) {
-    try {
-        supabaseClient = createClient(supabaseUrl!, supabasePublicKey!);
-    } catch (error) {
-        supabaseInitializationError = error instanceof Error ? error.message : String(error);
-        console.error('Failed to initialize Supabase client:', supabaseInitializationError);
-    }
-} else if (!supabaseInitializationError) {
-    console.error(
-        'Supabase client is not configured. Please create a .env.local file and add VITE_SUPABASE_URL along with either VITE_SUPABASE_ANON_KEY or VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY.'
-    );
-}
-
-export const isSupabaseConfigured = Boolean(supabaseClient);
-export const supabaseInitError = supabaseInitializationError;
-export const supabaseProjectUrl = supabaseUrl;
-export const supabaseProjectHostname = supabaseHostname;
-
-const createUnconfiguredClient = () =>
-    new Proxy({}, {
-        get(_target, property) {
-            throw new Error(
-                `Supabase client is not configured. Attempted to access "${String(property)}".`
-            );
-        }
-    }) as ReturnType<typeof createClient>;
-
-export const supabase = supabaseClient ?? createUnconfiguredClient();
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 /**
  * Fetches the public profile for a given user ID.
@@ -86,7 +44,7 @@ export const getProfile = async (userId: string, userEmail: string): Promise<Use
         .from('profiles')
         .select('*, teams(id, name)')
         .eq('id', userId)
-        .maybeSingle();
+        .single();
 
     if (error) {
         console.error('Error fetching profile:', error.message);
@@ -95,26 +53,26 @@ export const getProfile = async (userId: string, userEmail: string): Promise<Use
         return null;
     }
 
-    if (!data) {
-        return null;
+    if (data) {
+        // Construct the full URL for the profile photo
+        let photoUrl = `https://picsum.photos/seed/${data.id}/200`; // default placeholder
+        if (data.profile_photo_url) {
+            const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(data.profile_photo_url);
+            photoUrl = publicUrl;
+        }
+
+        return {
+            id: data.id,
+            email: userEmail,
+            full_name: data.full_name,
+            role: data.role as UserRole,
+            team_id: data.team_id,
+            teams: data.teams as { id: string, name: string } | null,
+            profile_photo_url: photoUrl,
+        };
     }
 
-    // Construct the full URL for the profile photo
-    let photoUrl = `https://picsum.photos/seed/${data.id}/200`; // default placeholder
-    if (data.profile_photo_url) {
-        const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(data.profile_photo_url as string);
-        photoUrl = publicUrl;
-    }
-
-    return {
-        id: data.id,
-        email: userEmail,
-        full_name: data.full_name,
-        role: data.role as UserRole,
-        team_id: data.team_id,
-        teams: data.teams as { id: string, name: string } | null,
-        profile_photo_url: photoUrl,
-    };
+    return null;
 };
 
 /**
