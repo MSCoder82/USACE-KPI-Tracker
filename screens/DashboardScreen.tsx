@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Cell } from 'recharts';
 import Card from '../components/Card';
-import { supabase } from '../lib/supabaseClient';
+import { supabase, isSupabaseConfigured, supabaseInitError, supabaseProjectHostname } from '../lib/supabaseClient';
 import { useUser } from '../App';
 import type { Input, Task, Campaign, GoalProgress } from '../types';
 import { InputCategory } from '../types';
@@ -45,7 +45,7 @@ const DashboardScreen: React.FC = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (!user?.team_id) {
+        if (!isSupabaseConfigured || !user?.team_id) {
             setCampaignsForFilter([]);
             return;
         }
@@ -58,10 +58,10 @@ const DashboardScreen: React.FC = () => {
             if (data) setCampaignsForFilter(data);
         };
         fetchCampaigns();
-    }, [user]);
+    }, [user, isSupabaseConfigured]);
 
     const fetchDashboardData = useCallback(async () => {
-        if (!user?.team_id) {
+        if (!isSupabaseConfigured || !user?.team_id) {
             setRecentInputs([]);
             setRecentTasks([]);
             setCategoryCounts([]);
@@ -148,11 +148,37 @@ const DashboardScreen: React.FC = () => {
         }
 
         setLoading(false);
-    }, [user, selectedCampaign, selectedDateRange, campaignsForFilter]);
+    }, [user, selectedCampaign, selectedDateRange, campaignsForFilter, isSupabaseConfigured]);
 
     useEffect(() => {
         fetchDashboardData();
     }, [fetchDashboardData]);
+
+    if (!isSupabaseConfigured) {
+        const connectionTarget = supabaseProjectHostname ?? 'Supabase';
+        return (
+            <div className="space-y-6">
+                <Card title="Configure Supabase to view the dashboard">
+                    <div className="space-y-3 text-sm text-gray-300">
+                        <p>
+                            We couldn't connect to {connectionTarget}, so there's no data to display on the dashboard yet.
+                        </p>
+                        <p>
+                            Add your Supabase credentials to a <code>.env.local</code> file in the project root with{' '}
+                            <code className="mx-1">VITE_SUPABASE_URL</code> and either{' '}
+                            <code className="mx-1">VITE_SUPABASE_ANON_KEY</code> or{' '}
+                            <code className="mx-1">VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY</code>, then restart the dev server.
+                        </p>
+                        {supabaseInitError && (
+                            <p className="rounded border border-red-500/40 bg-red-500/10 p-3 text-red-300">
+                                {supabaseInitError}
+                            </p>
+                        )}
+                    </div>
+                </Card>
+            </div>
+        );
+    }
 
     if (!user?.team_id) {
         return (
