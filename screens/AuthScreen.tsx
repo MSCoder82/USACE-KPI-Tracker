@@ -65,31 +65,37 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ disabled = false, notices, supa
         setError(null);
         setMessage(null);
 
-        if (isSignIn) {
-            const { error } = await supabase.auth.signInWithPassword({ email, password });
-            if (error) setError(error.message);
-        } else {
-            const { data, error } = await supabase.auth.signUp({
-                email,
-                password,
-                options: {
-                    data: {
-                        full_name: fullName,
-                        // You can add default role or team here if needed
-                        // role: 'staff', 
-                        // team_name: 'Default Team',
-                    }
-                }
-            });
-            if (error) {
-                setError(error.message);
-            } else if (data.user?.identities?.length === 0) {
-                 setError("This user already exists. Please try signing in.");
+        try {
+            if (isSignIn) {
+                const { error } = await supabase.auth.signInWithPassword({ email, password });
+                if (error) setError(error.message);
             } else {
-                setMessage("Success! Please check your email for a verification link.");
+                const { data, error } = await supabase.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: {
+                            full_name: fullName,
+                            // You can add default role or team here if needed
+                            // role: 'staff',
+                            // team_name: 'Default Team',
+                        }
+                    }
+                });
+                if (error) {
+                    setError(error.message);
+                } else if (data.user?.identities?.length === 0) {
+                    setError('This user already exists. Please try signing in.');
+                } else {
+                    setMessage('Success! Please check your email for a verification link.');
+                }
             }
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : String(err);
+            setError(errorMessage || 'An unexpected error occurred. Please try again.');
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     };
     
     return (
