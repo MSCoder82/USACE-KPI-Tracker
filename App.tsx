@@ -104,8 +104,10 @@ const resolveUserFromSession = async (activeSession: Session): Promise<ResolvedU
 const App: React.FC = () => {
     const [session, setSession] = useState<Session | null>(null);
     const [user, setUser] = useState<User | null>(null);
-    const [loading, setLoading] = useState(true);
+    const initialAuthPreview = !isSupabaseConfigured;
+    const [loading, setLoading] = useState(!initialAuthPreview && isSupabaseConfigured);
     const [authError, setAuthError] = useState<string | null>(null);
+    const [forceAuthPreview, setForceAuthPreview] = useState(initialAuthPreview);
     const [forceAuthPreview, setForceAuthPreview] = useState(!isSupabaseConfigured);
 
     const supabaseEndpointLabel = supabaseProjectHostname ?? 'the authentication service';
@@ -140,6 +142,9 @@ const App: React.FC = () => {
         };
 
         updateAuthPreview();
+        if (!isSupabaseConfigured) {
+            setLoading(false);
+        }
         window.addEventListener('hashchange', updateAuthPreview);
         window.addEventListener('popstate', updateAuthPreview);
 
