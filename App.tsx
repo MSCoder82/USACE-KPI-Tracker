@@ -243,16 +243,9 @@ const App: React.FC = () => {
         setUser(prevUser => prevUser ? { ...prevUser, ...updatedFields } : null);
     };
     
-    if (loading) {
-        return (
-            <div className="flex h-screen w-screen items-center justify-center bg-usace-bg">
-                <Loader className="h-8 w-8 animate-spin text-usace-red" />
-            </div>
-        );
-    }
-
     const shouldShowAuthScreen = !session || !user || forceAuthPreview;
-    if (shouldShowAuthScreen) {
+
+    const buildAuthNotices = (includeLoadingNotice: boolean): AuthNotice[] => {
         const notices: AuthNotice[] = [];
 
         if (!isSupabaseConfigured) {
@@ -308,10 +301,47 @@ const App: React.FC = () => {
             });
         }
 
+        if (includeLoadingNotice) {
+            notices.unshift({
+                type: 'info',
+                message: (
+                    <>
+                        <p className="font-semibold">Checking your session</p>
+                        <p className="mt-1 text-xs text-gray-300">
+                            Hang tight while we contact the authentication service. The sign-in form remains available in case the
+                            automatic check does not complete.
+                        </p>
+                    </>
+                ),
+            });
+        }
+
+        return notices;
+    };
+
+    if (loading && shouldShowAuthScreen) {
         return (
             <AuthScreen
                 disabled={!isSupabaseConfigured && !forceAuthPreview}
-                notices={notices}
+                notices={buildAuthNotices(true)}
+                supabaseConnected={isSupabaseConfigured && !supabaseInitError}
+            />
+        );
+    }
+
+    if (loading) {
+        return (
+            <div className="flex h-screen w-screen items-center justify-center bg-usace-bg">
+                <Loader className="h-8 w-8 animate-spin text-usace-red" />
+            </div>
+        );
+    }
+
+    if (shouldShowAuthScreen) {
+        return (
+            <AuthScreen
+                disabled={!isSupabaseConfigured && !forceAuthPreview}
+                notices={buildAuthNotices(false)}
                 supabaseConnected={isSupabaseConfigured && !supabaseInitError}
             />
         );
