@@ -106,7 +106,7 @@ const App: React.FC = () => {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const [authError, setAuthError] = useState<string | null>(null);
-    const [forceAuthPreview, setForceAuthPreview] = useState(false);
+    const [forceAuthPreview, setForceAuthPreview] = useState(!isSupabaseConfigured);
 
     const supabaseEndpointLabel = supabaseProjectHostname ?? 'the authentication service';
     const connectionErrorMessage = `We could not connect to ${supabaseEndpointLabel}. Please verify your Supabase configuration and try again.`;
@@ -136,7 +136,7 @@ const App: React.FC = () => {
         };
 
         const updateAuthPreview = () => {
-            setForceAuthPreview(resolveAuthPreviewFlag());
+            setForceAuthPreview(resolveAuthPreviewFlag() || !isSupabaseConfigured);
         };
 
         updateAuthPreview();
@@ -147,7 +147,7 @@ const App: React.FC = () => {
             window.removeEventListener('hashchange', updateAuthPreview);
             window.removeEventListener('popstate', updateAuthPreview);
         };
-    }, []);
+    }, [isSupabaseConfigured]);
 
     useEffect(() => {
         if (forceAuthPreview) {
