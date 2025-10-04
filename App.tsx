@@ -108,7 +108,6 @@ const App: React.FC = () => {
     const [loading, setLoading] = useState(!initialAuthPreview && isSupabaseConfigured);
     const [authError, setAuthError] = useState<string | null>(null);
     const [forceAuthPreview, setForceAuthPreview] = useState(initialAuthPreview);
-    const [forceAuthPreview, setForceAuthPreview] = useState(!isSupabaseConfigured);
 
     const supabaseEndpointLabel = supabaseProjectHostname ?? 'the authentication service';
     const connectionErrorMessage = `We could not connect to ${supabaseEndpointLabel}. Please verify your Supabase configuration and try again.`;
